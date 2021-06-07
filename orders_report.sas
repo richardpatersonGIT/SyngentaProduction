@@ -83,6 +83,7 @@
           material
           Matdescr
           SchedLine_Cnf_deldte 
+		  Hdr_req_deldte
           Order_week
           Order_month
           Line_crdte
@@ -332,7 +333,7 @@ quit;
           set order_extrapolation_conf(obs=&oe. firstobs=&oe.);
         run;
 
-        %extrapolation_extraction(extrapolation_config_ds=order_extrapolation_conf1);
+        %extrapolation_extraction(extrapolation_config_ds=order_extrapolation_conf1, whichdate=Hdr_req_deldte);
 
         %if &oe.=1 %then %do;
           options varlenchk=nowarn;
@@ -470,6 +471,7 @@ quit;
     Rsn_rej_cd
     Line_crdte
     SchedLine_Cnf_deldte
+	Hdr_req_deldte
     order_week
     order_month
     delivery_year
