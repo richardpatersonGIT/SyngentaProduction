@@ -45,10 +45,14 @@
       output;
   run;
 
-  data shw.shw_&shw_year._wk&shw_week._all(keep=sls_org sls_off shipto_cntry material variety SchedLine_Cnf_deldte cnf_qty order_type mat_div rsn_rej_cd soldto_nr);
+/* added Hdr_req_deldte RMP 7June2021*/
+  data shw.shw_&shw_year._wk&shw_week._all(keep=sls_org sls_off shipto_cntry material variety SchedLine_Cnf_deldte Hdr_req_deldte cnf_qty order_type mat_div rsn_rej_cd soldto_nr);
     set shw.raw_&shw_year._wk&shw_week._all;
   run;
 
 %mend create_sales_history_weekly;
+
+
+
 
 %create_sales_history_weekly(shw_year=2021, shw_week=22);
