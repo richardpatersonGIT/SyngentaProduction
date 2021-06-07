@@ -1,4 +1,4 @@
-%macro extrapolation_extraction(extrapolation_config_ds=);
+%macro extrapolation_extraction(extrapolation_config_ds=, whichdate=);
 
   proc sql noprint;
     select hist_season into :extrapolation_season trimmed from &extrapolation_config_ds. where ^missing(hist_season);
@@ -83,7 +83,7 @@
     quit;
 /*trinh*/
     data sales_history_tmp1(drop=sls_off shipto_cntry order_type rsn_rej_cd);
-      set shw.&dsname. (keep=sls_org soldto_nr sls_off shipto_cntry material variety SchedLine_Cnf_deldte cnf_qty order_type mat_div rsn_rej_cd);
+      set shw.&dsname. (keep=sls_org soldto_nr sls_off shipto_cntry material variety SchedLine_Cnf_deldte Hdr_req_deldte cnf_qty order_type mat_div rsn_rej_cd);
       length unique_code $10. year 8. week 8.;
       unique_code=cats(sls_org, sls_off, shipto_cntry);
       year=&year.;
@@ -102,10 +102,12 @@
     quit;
 
     %if "&datetype."="2" %then %do;
-      data sales_history_tmp1(drop=_SchedLine_Cnf_deldte);
-        set sales_history_tmp1(rename=(SchedLine_Cnf_deldte=_SchedLine_Cnf_deldte));
+      data sales_history_tmp1(drop=_SchedLine_Cnf_deldte _Hdr_req_deldte);
+        set sales_history_tmp1(rename=(SchedLine_Cnf_deldte=_SchedLine_Cnf_deldte Hdr_req_deldte=_Hdr_req_deldte));
         SchedLine_Cnf_deldte=input(_SchedLine_Cnf_deldte, 8.);
         SchedLine_Cnf_deldte=SchedLine_Cnf_deldte-21916;  
+        Hdr_req_deldte=input(_Hdr_req_deldte, 8.);
+        Hdr_req_deldte=Hdr_req_deldte-21916;  
       run;
     %end;
     /*</corection of date format>*/
@@ -170,7 +172,7 @@
 
   run;
 
-  data sales_history3(keep=sls_org region year week species order_season country historical_sales product_line_group);
+  data sales_history3(keep=sls_org region material year week species order_season order_season_start &whichdate country historical_sales cnf_qty sub_unit product_line_group variety macro_extrapolation_season macro_product_line_group);
     set sales_history2;
     length  season_week_start season_week_end 
              Order_season_start order_year order_season order_week Order_yweek order_month macro_extrapolation_season 8.;
@@ -187,22 +189,31 @@
 
     rc=pmd_assortment.find(); 
 
-    order_year=year(SchedLine_Cnf_deldte);
-    order_month=month(SchedLine_Cnf_deldte);
+    order_year=year(&whichdate);
+    
+
+    order_month=month(&whichdate);
+   
+
     if ^missing(season_week_start) then do;
       order_season_start=input(put(order_year, 4.)||'W'||put(season_week_start, z2.)||'01', weekv9.);
-      if SchedLine_Cnf_deldte >= order_season_start then do;
+      if &whichdate >= order_season_start then do;
         order_season=order_year; 
       end; else do;
         order_season=order_year-1;
       end;
     end;
 
-    order_yweek=input(substr(put(SchedLine_Cnf_deldte, weekv9.), 1, 4), 4.);
-    order_week=input(substr(put(SchedLine_Cnf_deldte, weekv9.), 6, 2), 2.);
+    order_yweek=input(substr(put(&whichdate, weekv9.), 1, 4), 4.);
+    order_week=input(substr(put(&whichdate, weekv9.), 6, 2), 2.);
+
+
     if order_week=53 then order_week=52;
 
-    if order_season=macro_extrapolation_season and product_line_group=macro_product_line_group then output;
+    if variety=70002559 then put order_season= SchedLine_Cnf_deldte= &whichdate.= order_season_start= order_year=  order_week= macro_extrapolation_season=;
+    if order_season=macro_extrapolation_season and product_line_group=macro_product_line_group then output sales_history3;
+	else if variety=70002559 then put order_season= SchedLine_Cnf_deldte= &whichdate.= order_season_start= order_year=  order_week= macro_extrapolation_season=;
+	format order_season_start &whichdate SchedLine_Cnf_deldte date9.;
   run;
 
   
