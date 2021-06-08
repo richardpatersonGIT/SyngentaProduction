@@ -327,7 +327,8 @@
 
 %macro e2_logic(table_in=, table_out=, first_season=, demand_col=, seasonality=);
 
-  %if %sysfunc(find(%sysfunc(lowcase(&product_line_group.)),cu)) > 0 %then %do;
+  %if &product_line_group = %then %goto skip;
+  %if %sysfunc(find(%sysfunc(lowcase(&product_line_group.)),cu)) <= 0 %then %goto skip;
 
     data &table_out.(drop=first_day_of_the_season season_match demand_season);
       set &table_in.;
@@ -363,39 +364,58 @@
         end;
       %end;
     run;
+  %RETURN;
 
-  %end; %else %do;
-
+  %SKIP:
     data &table_out.;
       set &table_in.;
     run;
 
-  %end;
+  
 
 %mend e2_logic;
 
-%macro forecast_report_step1(Round=, refresh_plc_from_PMD=, Region=, Product_line_group=, material_division=, seasonality=, Season=, First_season=, base_season_yyyy=, base_season_x=, current_year_week=, Supply_vertical_file=, Supply_horizontal_file=, Capacity_vertical_file=, Capacity_horizontal_file=, previous_forecast_file=);
-
+%macro forecast_report_step1(Round=, refresh_plc_from_PMD=, Region=, Product_line_group=, species=, material_division=, seasonality=, Season=, First_season=, base_season_yyyy=, base_season_x=, current_year_week=, Supply_vertical_file=, Supply_horizontal_file=, Capacity_vertical_file=, Capacity_horizontal_file=, previous_forecast_file=);
+  %put &=round &=refresh_plc_from_PMD= &=Region &=Product_line_group &=species &=material_division &=seasonality &=Season &=First_season &=base_season_yyyy;
   %let _seasonality=%sysfunc(compress(%substr(%quote(&seasonality.)., 1, 2),,kd));
   %let kda_material_division=%sysfunc(compress(%quote(&material_division.),,kda));
-  %let excel_report_fname=&region._&product_line_group._&kda_material_division._&first_season._&current_year_week._&_seasonality.;
+  
+  /* if multiple species is selected in metadata remove quotes and commas for use in excel filename */
+  %if &species NE %then %do;
+        %let species_tmp=%sysfunc(translate(&species,'_',' '));
+		%let species_formatted=%sysfunc(compress(&species_tmp,'"'));
+  %end;
+
+  
+  %if &product_line_group NE and &species NE %then %let excel_report_fname=&region._&product_line_group._&species_formatted._&kda_material_division._&first_season._&current_year_week._&_seasonality.;
+  %else %if &species NE %then %let excel_report_fname=&region._&species_formatted._&kda_material_division._&first_season._&current_year_week._&_seasonality.;
+  %else %let excel_report_fname=&region._&kda_material_division._&first_season._&current_year_week._&_seasonality.;
+  %put &=excel_report_fname;
+
   %let ka_material_division=%sysfunc(compress(%quote(&material_division.),,ka));
   %let sas_report_fname=&region.&product_line_group.&ka_material_division.&first_season.%substr(&round., 1, 1)&current_year_week.&_seasonality.;
+  
+
 
   proc sql;
   create table orders_s_aggr_c as
-    select region, variety, country, order_season, sum(historical_sales) as historical_sales, sum(actual_sales) as actual_sales 
+    select region, variety, country, order_season, product_line_group, species, sum(historical_sales) as historical_sales, sum(actual_sales) as actual_sales 
       from orders_filtered
-      where ^missing(order_season) and ^missing(actual_sales) and mat_div in (&material_division.) and product_line_group="&product_line_group." and region="&region." 
-      group by region, variety, country, order_season;
+      where ^missing(order_season) and ^missing(actual_sales) and mat_div in (&material_division.) and region="&region."
+            %if &product_line_group NE %then and product_line_group="&product_line_group.";  
+	        %if &species NE %then and lowcase(species) in (&species);
+      group by region, variety, country, order_season, product_line_group %if %bquote(&species) NE %then , species;;
   quit;
+
 
   proc sql;
   create table orders_s_aggr_r as
-    select region, variety, region as country, order_season, sum(historical_sales) as historical_sales, sum(actual_sales) as actual_sales 
+    select region, variety, region as country, product_line_group, species, order_season, sum(historical_sales) as historical_sales, sum(actual_sales) as actual_sales 
       from orders_filtered
-      where ^missing(order_season) and ^missing(actual_sales) and mat_div in (&material_division.) and product_line_group="&product_line_group." and region="&region."
-      group by region, variety, order_season;
+      where ^missing(order_season) and ^missing(actual_sales) and mat_div in (&material_division.) and region="&region."
+            %if &product_line_group NE %then and product_line_group="&product_line_group."; 
+	        %if &species NE %then and lowcase(species) in (&species); 
+      group by region, variety, order_season , product_line_group  %if %bquote(&species) NE %then , species;;
   quit;
 
   data orders_s_aggr;
@@ -410,10 +430,17 @@
     if region="&region.";
   run;
 
+ 
   data fr1;
     set fr;
-      if strip(product_line_group) = "&Product_line_group." and current_plc in ('E2', 'F0', 'F1', 'F2', 'F3', 'F4', 'G0', 'G2') and strip(seasons)="&seasonality." then output;
+	  if 
+      %if &product_line_group ne %then strip(product_line_group) = "&Product_line_group.";
+      %if &product_line_group ne and &species ne %then and lowcase(species) in (&species); 
+      %else %if &species ne %then lowcase(species) in (&species);
+      and current_plc in ('E2', 'F0', 'F1', 'F2', 'F3', 'F4', 'G0', 'G2') /*and strip(seasons)="&seasonality."*/ then output;;
   run;
+
+
 
   proc sql;
     create table regions4report as 
@@ -459,6 +486,8 @@
     left join fr1 f on f.variety=a.variety;
   quit;
 
+ 
+ 
   %let previous_season=%eval(&season.-1);
 
   %let current_year=%substr(&current_year_week., 1, 4);
@@ -477,6 +506,18 @@
 
   %put RPS: &=previous_season &=last_season_year &=last_season_week &=end_season_year, &=end_season_week, &=previous_season;
 
+/*%let LAST_SEASON_YEAR=2019;*/
+/*%let LAST_SEASON_WEEK=19;*/
+/*%LET END_SEASON_YEAR=2019;*/
+/*%LET END_SEASON_WEEK=39;*/
+/*%LET PREVIOUS_SEASON=2018;*/
+/*%LET REGION=SFE;*/
+/*%LET MATERIAL_DIVISION=%quote("6B", "6C");*/
+/*%LET PRODUCT_LINE_GROUP=;*/
+
+/*%LET SPECIES=%STR("ageratum houstonianum");	*/ /* this species belongs to two product lines but with the same seasonality */
+
+
   %read_sales_history_weekly(last_season_year=&last_season_year., 
                             last_season_week=&last_season_week., 
                             end_season_year=&end_season_year., 
@@ -484,7 +525,9 @@
                             previous_season=&previous_season., 
                             region=&region., 
                             material_division=%quote(&material_division.), 
-                            product_line_group=&product_line_group.);
+                            product_line_group=&product_line_group.,
+                            species=%STR(&species));
+
 
 
   data fr3(drop=rc historical_sales actual_sales order_season);
@@ -1431,7 +1474,7 @@
   data dmimport.Forecast_reports_md;
     set dmimport.Forecast_reports_md;
     if strip(step1)='Y' or
-       strip(step2)='Y' or
+       strip(step2)='Y' orv
        strip(step3)='Y' or
        strip(step4)='Y' then do;
       output;
@@ -1444,7 +1487,7 @@
   
   %do ii=1 %to &report_cnt.;
 
-    data _null_;
+    data forecast_reports_md;
       set dmimport.Forecast_reports_md;
       if _n_=&ii then do;
         call symput('round', strip(round));
@@ -1452,6 +1495,8 @@
         call symput('refresh_sales_week', strip(refresh_sales_week));
         call symput('region', strip(region));
         call symput('product_line_group', strip(product_line_group));
+		if ^missing(species) then call symput('species', '"'||lowcase(strip(tranwrd(species, ',', '", "')))||'"');
+		else call symput('species','');
         call symput('outlicensing', strip(outlicensing));
         call symput('material_division', '"'||strip(tranwrd(material_division, ',', '", "'))||'"');
         call symput('season', strip(season));
@@ -1477,6 +1522,9 @@
       end;
     run;
 
+  %put &=species;
+
+
     %if "&step1."="Y" or "&step2."="Y" or "&step3."="Y" or "&step4."="Y" %then %do;
       %let season0=&season.;
       %let season1=%eval(&season.-1);
@@ -1488,7 +1536,7 @@
 
       %let _material_division=%sysfunc(compress(%quote(&material_division.),,kda));
 
-      %put Report_variables &region. &product_line_group. &material_division. &product_line_group. &outlicensing. &season. &current_year_week. &seasonality. &mat_div. &previous_forecast_file. &step1.;
+      %put Report_variables &=region. &=product_line_group. &=material_division. &=product_line_group. &=species &=outlicensing. &=season. &=current_year_week. &=seasonality. &=mat_div. &=previous_forecast_file. &=step1.;
     
       data forecast_report_folders(keep=dir_lvl3:);
         dir_lvl1="&forecast_report_folder.";
@@ -1536,6 +1584,7 @@
                               refresh_plc_from_PMD=&refresh_plc_from_PMD.,
                               Region=&region., 
                               Product_line_group=&product_line_group., 
+							  species=%quote(&species),
                               material_division=%quote(&material_division.), 
                               seasonality=&seasonality., 
                               Season=&season., 
@@ -1594,3 +1643,4 @@
 %mend forecast_reports;
 
 %forecast_reports();
+
