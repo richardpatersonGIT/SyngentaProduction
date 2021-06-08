@@ -879,7 +879,7 @@
        perc_growth1 tactical_plan1 pm_demand1 sm_demand1 prev_demand1 assumption1 
        perc_growth2 tactical_plan2 pm_demand2 sm_demand2 prev_demand2 assumption2 
        perc_growth3 tactical_plan3 pm_demand3 sm_demand3 prev_demand3 assumption3
-       price;
+       price adj_percentage;
 
   data FOR_TEMPLATE(keep=&FR_COLUMNS_FOR_TEMPLATE.);
     retain &FR_COLUMNS_FOR_TEMPLATE.;
