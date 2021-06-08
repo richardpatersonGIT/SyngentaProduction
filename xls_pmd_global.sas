@@ -403,24 +403,26 @@ OPTION VALIDVARNAME=V7;
     if channel_eame='Y' then output;
   run;
 
-    data DMIMPORT.PMD_FN(DROP=EUROPE: NAM: APAC: LATAM:);
-    length region $6.;
-    set DMIMPORT.PMD_ALL(rename=(
-                    AME_variety_name=Variety_name 
-                    AME_current_plc=Current_PLC
-                    AME_future_plc=Future_PLC
-                    AME_date_of_future_plc=Future_PLC_Active_date
-                    EUROPE_replace_by=replace_by
-                    EUROPE_replacement_date=replacement_date
-                    EUROPE_abc=abc
-                    AME_channel_bi=channel_BI
-                    EUROPE_channel_floranova=channel_FLORANOVA
-                    EUROPE_regional_product_manager=regional_product_manager
-                    )); 
-    region="FN";
-    variety_name=coalescec(variety_name, GLOBAL_variety_name);
-    if ^missing(Variety_name) and Variety_name ^= "0" and channel_floranova='Y' then output;
-  run;
+  /* bugfix - configuration adjustment */
+
+/*    data DMIMPORT.PMD_FN(DROP=EUROPE: NAM: APAC: LATAM:);*/
+/*    length region $6.;*/
+/*    set DMIMPORT.PMD_ALL(rename=(*/
+/*                    AME_variety_name=Variety_name */
+/*                    AME_current_plc=Current_PLC*/
+/*                    AME_future_plc=Future_PLC*/
+/*                    AME_date_of_future_plc=Future_PLC_Active_date*/
+/*                    EUROPE_replace_by=replace_by*/
+/*                    EUROPE_replacement_date=replacement_date*/
+/*                    EUROPE_abc=abc*/
+/*                    AME_channel_bi=channel_BI*/
+/*                    EUROPE_channel_floranova=channel_FLORANOVA*/
+/*                    EUROPE_regional_product_manager=regional_product_manager*/
+/*                    )); */
+/*    region="FN";*/
+/*    variety_name=coalescec(variety_name, GLOBAL_variety_name);*/
+/*    if ^missing(Variety_name) and Variety_name ^= "0" and channel_floranova='Y' then output;*/
+/*  run;*/
 
 /*  data DMIMPORT.PMD_FN(drop=channel:);*/
 /*    length region $6.;*/
@@ -443,6 +445,13 @@ OPTION VALIDVARNAME=V7;
     if channel_japan='Y' then output;
   run;
 
+/* bugfix - configuration adjustment */
+  data DMIMPORT.PMD_FN(drop=channel:);
+    length region $6.;
+    set DMIMPORT.PMD_APAC;
+    region='FN';
+    if channel_floranova='Y' then output;
+  run;
 
 %mend IMPORT_PMD_ASSORTMENT;
 
