@@ -437,6 +437,7 @@
       seasons, 
       country, 
       "" as crop_categories length=18,
+	  abc,
       genetics,
       species_code,
       product_line,
@@ -861,10 +862,12 @@
       run;
   %end;
 
-  data fr_end(drop=series_name_in_region);
+  data fr_end(drop=series_name_in_region abc);
     set fr11;
 	/* RMP (1 JUNE 2021) - feature request - use regional series name when available, see also change in xls_pmd_global.sas */
 	series=coalescec(series_name_in_region, series);
+    /* RMP (1 JUNE 2021) - feature request - use ABC class from PMD not tactical plan */
+	crop_categories = abc;
   run;
 
   proc sort data=fr_end;

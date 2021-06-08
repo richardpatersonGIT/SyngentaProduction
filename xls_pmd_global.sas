@@ -400,7 +400,8 @@ OPTION VALIDVARNAME=V7;
     length region $6. series_name_in_region $44;
     set DMIMPORT.PMD_EUROPE;
     region='SFE';
-	series_name_in_region=europe_series_description;
+	series_name_in_region=europe_series_description;   /* 1 JUNE 2021 RMP feature request : regional series names */
+	abc = europe_ABC;                                  /* 1 JUNE 2021 RMP feature request : regional ABC classes */
     if channel_eame='Y' then output;
   run;
 
