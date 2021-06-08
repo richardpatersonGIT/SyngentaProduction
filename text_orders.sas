@@ -900,7 +900,7 @@
     
     rc=material_assortment.find(); 
 
-    if ^missing(sub_unit) then do;
+/*    if ^missing(sub_unit) then do;
       historical_sales=cnf_qty * sub_unit;
       if rsn_rej_cd in ('23', '60', '78', '64') then do;
         actual_sales=ord_qty * sub_unit;
@@ -908,17 +908,17 @@
         actual_sales=historical_sales;
       end;
     end;
-
-    /*TO BE VERSION, uncomment below, delete the part above*/
-/*    if ^missing(sub_unit) then do;*/
-/*      if rsn_rej_cd in ('23', '60', '78', '64') then do;*/
-/*        historical_sales=0;*/
-/*        actual_sales=ord_qty * sub_unit;*/
-/*      end; else do;*/
-/*        historical_sales=cnf_qty * sub_unit;*/
-/*        actual_sales=historical_sales;*/
-/*      end;*/
-/*    end;*/
+*/
+    
+    if ^missing(sub_unit) then do;
+      if rsn_rej_cd in ('23', '60', '78', '64') then do;
+        historical_sales=0;
+        actual_sales=ord_qty * sub_unit;
+      end; else do;
+        historical_sales=cnf_qty * sub_unit;
+       actual_sales=historical_sales;
+      end;
+    end;
 
     If rsn_rej_cd in ('57', 'ZR') then do;
       historical_sales=0;
