@@ -442,6 +442,7 @@
       product_line,
       species,
       series,
+	  series_name_in_region,
       a.variety,
       variety_name,
       current_plc as plc,
@@ -860,8 +861,10 @@
       run;
   %end;
 
-  data fr_end;
+  data fr_end(drop=series_name_in_region);
     set fr11;
+	/* RMP (1 JUNE 2021) - feature request - use regional series name when available, see also change in xls_pmd_global.sas */
+	series=coalescec(series_name_in_region, series);
   run;
 
   proc sort data=fr_end;

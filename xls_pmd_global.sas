@@ -397,14 +397,15 @@ OPTION VALIDVARNAME=V7;
   run;
 
   data DMIMPORT.PMD_SFE(drop=channel:);
-    length region $6.;
+    length region $6. series_name_in_region $44;
     set DMIMPORT.PMD_EUROPE;
     region='SFE';
+	series_name_in_region=europe_series_description;
     if channel_eame='Y' then output;
   run;
 
     data DMIMPORT.PMD_FN(DROP=EUROPE: NAM: APAC: LATAM:);
-    length region $6.;
+    length region $6. series_name_in_region $44;
     set DMIMPORT.PMD_ALL(rename=(
                     AME_variety_name=Variety_name 
                     AME_current_plc=Current_PLC
@@ -419,6 +420,7 @@ OPTION VALIDVARNAME=V7;
                     )); 
     region="FN";
     variety_name=coalescec(variety_name, GLOBAL_variety_name);
+	series_name_in_region=europe_series_description;
     if ^missing(Variety_name) and Variety_name ^= "0" and channel_floranova='Y' then output;
   run;
 
@@ -432,7 +434,7 @@ OPTION VALIDVARNAME=V7;
   /* bugfix - configuration adjustment - BI, JP and FN use APAC configuration */
   
   data DMIMPORT.PMD_BI(drop=channel:);
-    length region $6.;
+    length region $6. series_name_in_region $44;
     set DMIMPORT.PMD_APAC;
     region='BI';
 	series_name_in_region=apac_series_description;  /* 23 JULY 2021 RMP feature request : regional series names */
@@ -441,7 +443,7 @@ OPTION VALIDVARNAME=V7;
   run;
 
   data DMIMPORT.PMD_JP(drop=channel:);
-    length region $6.;
+    length region $6. series_name_in_region $44;
     set DMIMPORT.PMD_APAC;
     region='JP';
 	series_name_in_region=apac_series_description;  /* 23 JULY 2021 RMP feature request : regional series names */
