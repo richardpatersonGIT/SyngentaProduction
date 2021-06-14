@@ -172,7 +172,8 @@
 
   run;
 
-  data sales_history3(keep=sls_org region material year week species order_season order_season_start &whichdate country historical_sales cnf_qty sub_unit product_line_group variety macro_extrapolation_season macro_product_line_group);
+  data sales_history3(keep=sls_org region material year week species order_season order_season_start &whichdate country historical_sales cnf_qty sub_unit product_line_group variety macro_extrapolation_season macro_product_line_group)
+       rejected_on_header_line_date(keep=variety schedline_cnf_deldte hdr_req_deldte macro_extrapolation_season order_season_with_header_line order_season_with_schedline);
     set sales_history2;
     length  season_week_start season_week_end 
              Order_season_start order_year order_season order_week Order_yweek order_month macro_extrapolation_season 8.;
@@ -202,17 +203,33 @@
       end; else do;
         order_season=order_year-1;
       end;
+	  
+	  if SchedLine_Cnf_deldte >= order_season_start then order_season_with_schedline=order_year;
+	  else order_season_with_schedline=order_year - 1;
     end;
-
+	
+	/*if order_season ne order_season_schedline then do;
+	    put variety=;
+		put SchedLine_Cnf_deldte=;
+		put hdr_req_deldte=;
+		put macro_extrapolation_season=; 
+		put order_season=;
+        put	order_season_with_schedline=;
+    end;*/
+	
     order_yweek=input(substr(put(&whichdate, weekv9.), 1, 4), 4.);
     order_week=input(substr(put(&whichdate, weekv9.), 6, 2), 2.);
 
 
     if order_week=53 then order_week=52;
 
-    if variety=70002559 then put order_season= SchedLine_Cnf_deldte= &whichdate.= order_season_start= order_year=  order_week= macro_extrapolation_season=;
+    
     if order_season=macro_extrapolation_season and product_line_group=macro_product_line_group then output sales_history3;
-	else if variety=70002559 then put order_season= SchedLine_Cnf_deldte= &whichdate.= order_season_start= order_year=  order_week= macro_extrapolation_season=;
+	if order_season_with_schedline=macro_extrapolation_season and (order_season ne macro_extrapolation_season) and product_line_group=macro_product_line_group then do;
+	    order_season_with_header_line = order_season;
+		output rejected_on_header_line_date;
+	end;
+	
 	format order_season_start &whichdate SchedLine_Cnf_deldte date9.;
   run;
 
