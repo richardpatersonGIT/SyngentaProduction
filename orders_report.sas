@@ -83,6 +83,7 @@
           material
           Matdescr
           SchedLine_Cnf_deldte 
+		  Hdr_req_deldte
           Order_week
           Order_month
           Line_crdte
@@ -470,6 +471,7 @@ quit;
     Rsn_rej_cd
     Line_crdte
     SchedLine_Cnf_deldte
+	Hdr_req_deldte
     order_week
     order_month
     delivery_year
