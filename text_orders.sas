@@ -951,21 +951,21 @@
     rc=pmd_assortment.find(); 
 
     
-    order_year=year(SchedLine_Cnf_deldte);
-    order_month=month(SchedLine_Cnf_deldte);
-    order_yweek=input(substr(put(SchedLine_Cnf_deldte, weekv9.), 1, 4), 4.);
-    order_week=input(substr(put(SchedLine_Cnf_deldte, weekv9.), 6, 2), 2.);
+    order_year=year(Hdr_req_deldte);
+    order_month=month(Hdr_req_deldte);
+    order_yweek=input(substr(put(Hdr_req_deldte, weekv9.), 1, 4), 4.);
+    order_week=input(substr(put(Hdr_req_deldte, weekv9.), 6, 2), 2.);
     if ^missing(season_week_start) then do;
       order_season_start=input(put(order_year, 4.)||'W'||put(season_week_start, z2.)||'01', weekv9.);
-      SchedLine_Cnf_deldte_ym=input(put(year(SchedLine_Cnf_deldte),4.)||put(month(SchedLine_Cnf_deldte),z2.), 6.);
+      Hdr_req_deldte_ym=input(put(year(Hdr_req_deldte),4.)||put(month(Hdr_req_deldte),z2.), 6.);
       order_season_start_ym=input(put(year(order_season_start),4.)||put(month(order_season_start),z2.), 6.);
-      if SchedLine_Cnf_deldte >= order_season_start then do;
+      if Hdr_req_deldte >= order_season_start then do;
         order_season=order_year; 
       end; else do;
         order_season=order_year-1;
       end;
 
-      if order_season_start_ym < SchedLine_Cnf_deldte_ym or (order_season_start_ym=SchedLine_Cnf_deldte_ym and day(order_season_start)<=15) then do;
+      if order_season_start_ym < Hdr_req_deldte_ym or (order_season_start_ym=Hdr_req_deldte_ym and day(order_season_start)<=15) then do;
         order_month_season=order_year;
       end; else do;
         order_month_season=order_year-1;
