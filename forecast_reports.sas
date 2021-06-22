@@ -527,6 +527,17 @@
     rc=horders.find();
     s3=coalesce(historical_sales,0);
 
+    call missing(historical_sales);
+    order_season=&season4.;
+    rc=horders.find();
+    s4=coalesce(historical_sales,0);
+
+
+	call missing(historical_sales);
+    order_season=&season5.;
+    rc=horders.find();
+    s5=coalesce(historical_sales,0);
+
     rc=sales_percentage.find();
 
     if percentage^=0 then do;
@@ -872,18 +883,20 @@
        plc Future_PLC valid_from_date 
        replace_by replacement_date
        global_plc Global_Future_PLC global_valid_from_date 
-       s3 s2 s1 
+       s5 s4 s3 s2 s1 
        ytd percentage extrapolation 
        country_split supply capacity remark 
        prev_demand0 assumption0
        perc_growth1 tactical_plan1 pm_demand1 sm_demand1 prev_demand1 assumption1 
        perc_growth2 tactical_plan2 pm_demand2 sm_demand2 prev_demand2 assumption2 
        perc_growth3 tactical_plan3 pm_demand3 sm_demand3 prev_demand3 assumption3
-       price;
+	   perc_growth4 tactical_plan4 pm_demand4 sm_demand4 prev_demand4 assumption4
+	   perc_growth5 tactical_plan5 pm_demand5 sm_demand5 prev_demand5 assumption5
+       price adj_percentage;
 
   data FOR_TEMPLATE(keep=&FR_COLUMNS_FOR_TEMPLATE.);
     retain &FR_COLUMNS_FOR_TEMPLATE.;
-    length sm_demand1 sm_demand2 sm_demand3 8.;
+    length sm_demand1 sm_demand2 sm_demand3 sm_demand4 sm_demand5 8.;
     length remark $1.;
     set fr_end;
     call missing(remark);
@@ -892,12 +905,21 @@
     pm_demand1=round(pm_demand1,1);
     pm_demand2=round(pm_demand2,1);
     pm_demand3=round(pm_demand3,1);
+	pm_demand4=0;
+	pm_demand5=0;
     prev_demand1=round(prev_demand1,1);
     prev_demand2=round(prev_demand2,1);
     prev_demand3=round(prev_demand3,1);
+	prev_demand4=0;
+	prev_demand5=0;
     sm_demand1=round(sm_demand1,1);
     sm_demand2=round(sm_demand2,1);
     sm_demand3=round(sm_demand3,1);
+	sm_demand4=0;
+	sm_demand5=0;
+
+	s5=round(s5,1);
+	s4=round(s4,1);
     s3=round(s3,1);
     s2=round(s2,1);
     s1=round(s1,1);
@@ -1482,9 +1504,13 @@
       %let season1=%eval(&season.-1);
       %let season2=%eval(&season.-2);
       %let season3=%eval(&season.-3);
+	  %let season4=%eval(&season.-4);
+	  %let season5=%eval(&season.-5);
       %let nextseason1=%eval(&first_season.+0);
       %let nextseason2=%eval(&first_season.+1);
       %let nextseason3=%eval(&first_season.+2);
+	  %let nextseason4=%eval(&first_season.+3);
+	  %let nextseason5=%eval(&first_season.+4);
 
       %let _material_division=%sysfunc(compress(%quote(&material_division.),,kda));
 
