@@ -532,7 +532,6 @@
     rc=horders.find();
     s4=coalesce(historical_sales,0);
 
-
 	call missing(historical_sales);
     order_season=&season5.;
     rc=horders.find();
@@ -550,7 +549,7 @@
 
   proc sql noprint;
     select 
-      case when sum(a.s3)^=0 then (sum(a.s1)/sum(a.s3))**(1/2)-1
+      case when sum(a.s5)^=0 then (sum(a.s1)/sum(a.s5))**(1/2)-1
         else 1
       end as CAGR into :cagr
       from fr3 a 
@@ -561,7 +560,8 @@
   data fr3 (drop=rc tp_growth tactical_plan_base tp_spread);
     set fr3;
     length rc 8.;
-    length hash_mat_div $4. tp_spread $9. tp_growth 8. perc_growth1 perc_growth2 perc_growth3 tactical_plan_base tactical_plan1 tactical_plan2 tactical_plan3 8.;
+    length hash_mat_div $4. tp_spread $9. tp_growth 8. perc_growth1 perc_growth2 perc_growth3 perc_growth4 perc_growth5 
+	       tactical_plan_base tactical_plan1 tactical_plan2 tactical_plan3 tactical_plan4 tactical_plan5 8.;
 
     hash_mat_div="&ka_material_division.";
 
@@ -591,9 +591,13 @@
         perc_growth1=&cagr.;
         perc_growth2=&cagr.;
         perc_growth3=&cagr.;
+		perc_growth4=&cagr.;
+		perc_growth5=&cagr.;
         tactical_plan1=tactical_plan_base*(1+coalesce(perc_growth1, 0))**2;
         tactical_plan2=tactical_plan1    *(1+coalesce(perc_growth2, 0));
         tactical_plan3=tactical_plan2    *(1+coalesce(perc_growth3, 0));
+		tactical_plan4=tactical_plan2    *(1+coalesce(perc_growth4, 0));
+		tactical_plan5=tactical_plan2    *(1+coalesce(perc_growth5, 0));
       end;
     end; else do;
 
@@ -610,6 +614,15 @@
         rc=tactical_plan.find();
         if rc=0 then perc_growth3=tp_growth;
 
+		 tp_spread="%eval(&first_season.+2)-%eval(&first_season.+3)";
+        rc=tactical_plan.find();
+        if rc=0 then perc_growth4=tp_growth;
+
+		tp_spread="%eval(&first_season.+3)-%eval(&first_season.+4)";
+        rc=tactical_plan.find();
+        if rc=0 then perc_growth5=tp_growth;
+
+
   /*      if missing(replacement_date) then do;*/
   /*        if ^missing(replace_by) and ^missing(valid_from_date) then do;*/
   /*          replacement_date=valid_from_date;*/
@@ -619,12 +632,16 @@
         tactical_plan1=tactical_plan_base*(1+coalesce(perc_growth1, 0));
         tactical_plan2=tactical_plan1    *(1+coalesce(perc_growth2, 0));
         tactical_plan3=tactical_plan2    *(1+coalesce(perc_growth3, 0));
+		tactical_plan4=tactical_plan3    *(1+coalesce(perc_growth4, 0));
+		tactical_plan5=tactical_plan4    *(1+coalesce(perc_growth5, 0));
       end;
     end;
 
     tactical_plan1=max(tactical_plan1, 0);
     tactical_plan2=max(tactical_plan2, 0);
     tactical_plan3=max(tactical_plan3, 0);
+	tactical_plan4=max(tactical_plan4, 0);
+	tactical_plan5=max(tactical_plan5, 0);
 
   run;
 
@@ -641,16 +658,22 @@
       region_tactical_plan1=0;
       region_tactical_plan2=0;
       region_tactical_plan3=0;
+	  region_tactical_plan4=0;
+	  region_tactical_plan5=0;
     end;
     if order=1 then do;
       region_tactical_plan1=region_tactical_plan1+tactical_plan1;
       region_tactical_plan2=region_tactical_plan2+tactical_plan2;
       region_tactical_plan3=region_tactical_plan3+tactical_plan3;
+	  region_tactical_plan4=region_tactical_plan4+tactical_plan3;
+	  region_tactical_plan5=region_tactical_plan5+tactical_plan3;
     end;
     if order=3 then do;
       tactical_plan1=region_tactical_plan1;
       tactical_plan2=region_tactical_plan2;
       tactical_plan3=region_tactical_plan3;
+	  tactical_plan4=region_tactical_plan4;
+	  tactical_plan5=region_tactical_plan5;
     end;
   run;
 
@@ -789,6 +812,18 @@
       rc=ff_assmt.find();
       assumption3=ff_assumption;
 
+	  ff_season=%eval(&first_season.+3);
+      rc=hash_ff_sm.find();
+      prev_demand4=ff_sm;
+      rc=ff_assmt.find();
+      assumption4=ff_assumption;
+
+	  ff_season=%eval(&first_season.+4);
+      rc=hash_ff_sm.find();
+      prev_demand5=ff_sm;
+      rc=ff_assmt.find();
+      assumption5=ff_assumption;
+
     %end;
 
   run;
@@ -803,16 +838,23 @@
       pm_demand1=prev_demand1;
       pm_demand2=prev_demand2;
       pm_demand3=prev_demand3;
+	  pm_demand3=prev_demand4;
+	  pm_demand3=prev_demand5;
     %end; 
     %if "&round."="NEW" %then %do;
       pm_demand1=tactical_plan1;
       pm_demand2=tactical_plan2;
       pm_demand3=tactical_plan3;
+      pm_demand4=tactical_plan4;
+	  pm_demand5=tactical_plan5;
+
     %end;
     if country^="&region." then do;
       pm_demand1=0; 
       pm_demand2=0; 
       pm_demand3=0;
+	  pm_demand4=0;
+	  pm_demand5=0;
     end; 
   run;
 
@@ -905,18 +947,19 @@
     pm_demand1=round(pm_demand1,1);
     pm_demand2=round(pm_demand2,1);
     pm_demand3=round(pm_demand3,1);
-	pm_demand4=0;
-	pm_demand5=0;
+	pm_demand4=round(pm_demand4,1);
+	pm_demand5=round(pm_demand5,1);
     prev_demand1=round(prev_demand1,1);
     prev_demand2=round(prev_demand2,1);
     prev_demand3=round(prev_demand3,1);
-	prev_demand4=0;
-	prev_demand5=0;
+	prev_demand4=round(prev_demand4,1);
+	prev_demand5=round(prev_demand5,1);
     sm_demand1=round(sm_demand1,1);
     sm_demand2=round(sm_demand2,1);
     sm_demand3=round(sm_demand3,1);
-	sm_demand4=0;
-	sm_demand5=0;
+	sm_demand4=round(sm_demand4,1);
+	sm_demand5=round(sm_demand5,1);
+	
 
 	s5=round(s5,1);
 	s4=round(s4,1);
