@@ -1245,13 +1245,15 @@
 
   proc sql;
     create table forecast_sm_feedback_demand1 as
-    select country, variety, smf_demand1, smf_demand2, smf_demand3 
+    select country, variety, smf_demand1, smf_demand2, smf_demand3, smf_demand4, smf_demand5 
   from forecast_sm_feedback_demand 
     union (select "&region." as country, 
                   variety, 
                   sum(smf_demand1) as smf_demand1, 
                   sum(smf_demand2) as smf_demand2, 
-                  sum(smf_demand3) as smf_demand3 
+                  sum(smf_demand3) as smf_demand3,
+				  sum(smf_demand4) as smf_demand4, 
+				  sum(smf_demand5) as smf_demand5  
           from forecast_sm_feedback_demand 
           group by variety)
     order by variety, country;
@@ -1259,12 +1261,14 @@
 
   proc sql;
     create table forecast_sm_feedback_demand2 as
-    select a.*, b.smf_total_demand1, b.smf_total_demand2, b.smf_total_demand3 
+    select a.*, b.smf_total_demand1, b.smf_total_demand2, b.smf_total_demand3, b.smf_total_demand4, b.smf_total_demand5   
     from forecast_sm_feedback_demand1 a 
     left join (select variety, 
                       sum(smf_demand1) as smf_total_demand1, 
                       sum(smf_demand2) as smf_total_demand2, 
-                      sum(smf_demand3) as smf_total_demand3 
+                      sum(smf_demand3) as smf_total_demand3,
+					  sum(smf_demand3) as smf_total_demand4,
+					  sum(smf_demand3) as smf_total_demand5 
           from forecast_sm_feedback_demand 
           group by variety) b on a.variety=b.variety
     order by variety, country;
@@ -1272,9 +1276,10 @@
 
   proc sql;
     create table smf2 as
-    select a.*, b.smf_demand1 as smf_demand1_raw, b.smf_demand2 as smf_demand2_raw, b.smf_demand3 as smf_demand3_raw, 
-                b.smf_demand1, b.smf_demand2, b.smf_demand3, 
-                b.smf_total_demand1, b.smf_total_demand2, b.smf_total_demand3, c.smf_assm1, c.smf_assm2, c.smf_assm3 from smf1 a
+    select a.*, b.smf_demand1 as smf_demand1_raw, b.smf_demand2 as smf_demand2_raw, b.smf_demand3 as smf_demand3_raw, b.smf_demand4 as smf_demand4_raw, b.smf_demand5 as smf_demand5_raw,  
+                b.smf_demand1, b.smf_demand2, b.smf_demand3, b.smf_demand4,b.smf_demand5,
+                b.smf_total_demand1, b.smf_total_demand2, b.smf_total_demand3, b.smf_total_demand4, b.smf_total_demand5, 
+                c.smf_assm1, c.smf_assm2, c.smf_assm3, c.smf_assm4, c.smf_assm5 from smf1 a
     left join forecast_sm_feedback_demand2 b on a.variety=b.variety and a.country=b.country
     left join forecast_sm_feedback_assm c on a.variety=c.variety and a.country=c.country;
   quit;
@@ -1285,10 +1290,14 @@
       smf_assm1=pmf_assm1;
       smf_assm2=pmf_assm2;
       smf_assm3=pmf_assm3;
+	  smf_assm3=pmf_assm4;
+	  smf_assm3=pmf_assm5;
     end;
     smf_total_demand_raw1=smf_total_demand1;
     smf_total_demand_raw2=smf_total_demand2;
     smf_total_demand_raw3=smf_total_demand3;
+	smf_total_demand_raw4=smf_total_demand4;
+	smf_total_demand_raw5=smf_total_demand5;
   run;
   
   %g2_logic(table_in=smf3, table_out=smf4, first_season=&first_season., demand_col=smf_total_demand, seasonality=&seasonality.);
@@ -1302,6 +1311,10 @@
       else smf_demand2=0;
     if smf_total_demand_raw3^=0 then smf_demand3=round((smf_demand3_raw/smf_total_demand_raw3)*smf_total_demand3, 1);
       else smf_demand3=0;
+	if smf_total_demand_raw4^=0 then smf_demand4=round((smf_demand4_raw/smf_total_demand_raw4)*smf_total_demand4, 1);
+      else smf_demand4=0;
+	if smf_total_demand_raw5^=0 then smf_demand5=round((smf_demand5_raw/smf_total_demand_raw5)*smf_total_demand5, 1);
+      else smf_demand5=0;
   run;
 
   %if "&refresh_sales_week."^="" %then %do;
@@ -1336,7 +1349,9 @@
      prev_demand0 assumption0
      perc_growth1 tactical_plan1 pmf_split_demand1 smf_demand1 prev_demand1 smf_assm1
      perc_growth2 tactical_plan2 pmf_split_demand2 smf_demand2 prev_demand2 smf_assm2 
-     perc_growth3 tactical_plan3 pmf_split_demand3 smf_demand3 prev_demand3 smf_assm3 
+     perc_growth3 tactical_plan3 pmf_split_demand3 smf_demand3 prev_demand3 smf_assm3
+	 perc_growth4 tactical_plan4 pmf_split_demand4 smf_demand4 prev_demand4 smf_assm4 
+	 perc_growth5 tactical_plan5 pmf_split_demand5 smf_demand5 prev_demand5 smf_assm5 
      price;
 
   data SMF_FOR_TEMPLATE(keep=&SMF_COLUMNS_FOR_TEMPLATE.);
@@ -1348,12 +1363,20 @@
     pmf_split_demand1=round(pmf_split_demand1,1);
     pmf_split_demand2=round(pmf_split_demand2,1);
     pmf_split_demand3=round(pmf_split_demand3,1);
+	pmf_split_demand4=round(pmf_split_demand4,1);
+	pmf_split_demand5=round(pmf_split_demand5,1);
     prev_demand1=round(prev_demand1,1);
     prev_demand2=round(prev_demand2,1);
     prev_demand3=round(prev_demand3,1);
+	prev_demand4=round(prev_demand4,1);
+	prev_demand5=round(prev_demand5,1);
     smf_demand1=round(smf_demand1,1);
     smf_demand2=round(smf_demand2,1);
     smf_demand3=round(smf_demand3,1);
+	smf_demand4=round(smf_demand4,1);
+	smf_demand5=round(smf_demand5,1);
+	s5=round(s3,1);
+	s4=round(s4,1);
     s3=round(s3,1);
     s2=round(s2,1);
     s1=round(s1,1);    
