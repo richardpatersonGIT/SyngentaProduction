@@ -1012,19 +1012,30 @@
 
   %read_forecast_file(forecast_file=&pm_feedback., forecast_sheet=Variety level fcst);
 
-  data pm_feedback1 (keep=variety country PLC future_plc valid_from_date global_plc global_future_plc global_valid_from_date sum_of_3_seasons pmf_demand1 pmf_demand2 pmf_demand3 pmf_assm1 pmf_assm2 pmf_assm3);
+  data pm_feedback1 (keep=variety country PLC future_plc valid_from_date global_plc global_future_plc global_valid_from_date 
+						  sum_of_3_seasons sum_of_5_seasons pmf_demand1 pmf_demand2 pmf_demand3 pmf_demand4 pmf_demand5 
+                          pmf_assm1 pmf_assm2 pmf_assm3 pmf_assm4 pmf_assm5);
     set forecast_file(rename=(
                       dmpm_demand_&nextseason1.=pmf_demand1
                       dmpm_demand_&nextseason2.=pmf_demand2
                       dmpm_demand_&nextseason3.=pmf_demand3
+					  dmpm_demand_&nextseason4.=pmf_demand4
+					  dmpm_demand_&nextseason5.=pmf_demand5
                       assumptions_&nextseason1.=pmf_assm1
                       assumptions_&nextseason2.=pmf_assm2
                       assumptions_&nextseason3.=pmf_assm3
+					  assumptions_&nextseason4.=pmf_assm4
+					  assumptions_&nextseason5.=pmf_assm5
+
                      ));
     if missing(pmf_demand1) then pmf_demand1=0;
     if missing(pmf_demand2) then pmf_demand2=0;
     if missing(pmf_demand3) then pmf_demand3=0;
+	if missing(pmf_demand4) then pmf_demand4=0;
+	if missing(pmf_demand5) then pmf_demand5=0;
     sum_of_3_seasons=pmf_demand1+pmf_demand2+pmf_demand3;
+	sum_of_5_seasons=pmf_demand1+pmf_demand2+pmf_demand3+pmf_demand4+pmf_demand5;
+
     if country="&region." then output;
   run;
 
@@ -1058,12 +1069,18 @@
           b.pmf_demand1,
           b.pmf_demand2,
           b.pmf_demand3,
+		  b.pmf_demand4,
+		  b.pmf_demand5,
           b.pmf_assm1,
           b.pmf_assm2,
           b.pmf_assm3,
+		  b.pmf_assm4,
+		  b.pmf_assm5,
           round((b.pmf_demand1*a.country_split),1) as pmf_split_demand1, 
           round((b.pmf_demand2*a.country_split),1) as pmf_split_demand2, 
           round((b.pmf_demand3*a.country_split),1) as pmf_split_demand3 
+		  round((b.pmf_demand4*a.country_split),1) as pmf_split_demand4 
+		  round((b.pmf_demand5*a.country_split),1) as pmf_split_demand5 
     from dmfcst1.&sas_report_fname.(drop=PLC future_plc valid_from_date global_plc global_future_plc global_valid_from_date) a 
     left join pm_feedback4 b on a.variety=b.variety;
   quit;
@@ -1087,6 +1104,8 @@
     pmf_sm_demand1=pmf_split_demand1;
     pmf_sm_demand2=pmf_split_demand2;
     pmf_sm_demand3=pmf_split_demand3;
+	pmf_sm_demand4=pmf_split_demand4;
+	pmf_sm_demand5=pmf_split_demand5;
   run;
 
   %if "&refresh_sales_week."^="" %then %do;
@@ -1122,6 +1141,8 @@
         perc_growth1 tactical_plan1 pmf_split_demand1 pmf_sm_demand1 prev_demand1 pmf_assm1
         perc_growth2 tactical_plan2 pmf_split_demand2 pmf_sm_demand2 prev_demand2 pmf_assm2 
         perc_growth3 tactical_plan3 pmf_split_demand3 pmf_sm_demand3 prev_demand3 pmf_assm3 
+		perc_growth4 tactical_plan4 pmf_split_demand4 pmf_sm_demand4 prev_demand4 pmf_assm4 
+		perc_growth5 tactical_plan5 pmf_split_demand5 pmf_sm_demand5 prev_demand5 pmf_assm5 
         price;
 
   data FOR_TEMPLATE_COUNTRIES(keep=&PMF_COLUMNS_FOR_TEMPLATE.);
@@ -1133,12 +1154,21 @@
     pmf_split_demand1=round(pmf_split_demand1,1);
     pmf_split_demand2=round(pmf_split_demand2,1);
     pmf_split_demand3=round(pmf_split_demand3,1);
+	pmf_split_demand4=round(pmf_split_demand4,1);
+	pmf_split_demand5=round(pmf_split_demand5,1);
     prev_demand1=round(prev_demand1,1);
     prev_demand2=round(prev_demand2,1);
     prev_demand3=round(prev_demand3,1);
+	prev_demand4=round(prev_demand4,1);
+	prev_demand5=round(prev_demand5,1);
+
     pmf_sm_demand1=round(pmf_sm_demand1,1);
     pmf_sm_demand2=round(pmf_sm_demand2,1);
     pmf_sm_demand3=round(pmf_sm_demand3,1);
+	pmf_sm_demand3=round(pmf_sm_demand4,1);
+	pmf_sm_demand3=round(pmf_sm_demand5,1);
+	s5=round(s5,1);
+	s4=round(s4,1);
     s3=round(s3,1);
     s2=round(s2,1);
     s1=round(s1,1);
