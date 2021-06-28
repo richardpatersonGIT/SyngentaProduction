@@ -51,4 +51,8 @@
 
 %mend create_sales_history_weekly;
 
+<<<<<<< Updated upstream
 %create_sales_history_weekly(shw_year=2021, shw_week=22);
+=======
+%create_sales_history_weekly(shw_year=2021, shw_week=25);
+>>>>>>> Stashed changes
