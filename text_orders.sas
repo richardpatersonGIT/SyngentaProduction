@@ -908,22 +908,22 @@
         actual_sales=historical_sales;
       end;
     end;
-
-    /*TO BE VERSION, uncomment below, delete the part above*/
-/*    if ^missing(sub_unit) then do;*/
-/*      if rsn_rej_cd in ('23', '60', '78', '64') then do;*/
-/*        historical_sales=0;*/
-/*        actual_sales=ord_qty * sub_unit;*/
-/*      end; else do;*/
-/*        historical_sales=cnf_qty * sub_unit;*/
-/*        actual_sales=historical_sales;*/
-/*      end;*/
-/*    end;*/
-
-    If rsn_rej_cd in ('57', 'ZR') then do;
-      historical_sales=0;
-      actual_sales=0;
+    
+    if ^missing(sub_unit) then do;
+      if region='SFE' and rsn_rej_cd in ('ZR', '01', '02', '23', '57', '60', '64', '78') then do;
+        historical_sales=0;
+        actual_sales=ord_qty * sub_unit;
+      end; 
+     else if region in ('BI' 'JP' 'FN') and rsn_rej_cd in ('ZR', '01', '02', '23', '57', '68', '78') then do;
+        historical_sales=0;
+        actual_sales=ord_qty * sub_unit;
+     end;
+     else do;
+        historical_sales=cnf_qty * sub_unit;
+       actual_sales=historical_sales;
+      end;
     end;
+
 
     br_actual_sales=0;
     br_historical_sales=0;
