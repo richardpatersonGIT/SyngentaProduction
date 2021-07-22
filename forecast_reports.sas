@@ -529,8 +529,10 @@
 
     rc=sales_percentage.find();
 
+	if percentage > 1 then adj_percentage = 1;
+	else adj_percentage = percentage;
     if percentage^=0 then do;
-      extrapolation=coalesce(round(ytd/percentage, 1),0);
+      extrapolation=coalesce(round(ytd/adj_percentage, 1),0);
     end; else do;
       extrapolation=0;
     end;
