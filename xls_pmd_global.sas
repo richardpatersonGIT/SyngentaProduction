@@ -201,10 +201,10 @@ OPTION VALIDVARNAME=V7;
 
       /*EUROPE*/
       EUROPE_series_code=strip(_EUROPE_europe_series_code);
-      EUROPE_series_description=strip(_EUROPE_europe_series_descriptio);
-      EUROPE_variety_name=strip(_EUROPE_europe_name);
-      EUROPE_current_plc=strip(_EUROPE_europe_plc);
-      EUROPE_future_plc=strip(_EUROPE_europe_future_plc);
+      EUROPE_series_description=strip(_EUROPE_europe_series_descriptio); /* use for SFE */
+      EUROPE_variety_name=strip(_EUROPE_europe_name); /* use for SFE */
+      EUROPE_current_plc=strip(_EUROPE_europe_plc); /* use for SFE */
+      EUROPE_future_plc=strip(_EUROPE_europe_future_plc); /* use for SFE */
       EUROPE_date_of_future_plc=input(_EUROPE_europe_date_of_future_pl, date11.);
       EUROPE_replace_by=input(_EUROPE_europe_replace_by, best.);
       EUROPE_replacement_date=input(_EUROPE_europe_replacement_date_, date11.);
@@ -227,17 +227,17 @@ OPTION VALIDVARNAME=V7;
 
       /*APAC*/
       APAC_series_code=strip(_APAC_apac_series_code);
-      APAC_series_description=strip(_APAC_apac_series_description);
-      APAC_variety_name=strip(_APAC_apac_name);
-      APAC_current_plc=strip(_APAC_apac_plc);
-      APAC_future_plc=strip(_APAC_apac_future_plc);
+      APAC_series_description=strip(_APAC_apac_series_description);  /* use for all reports about BI, JP, FN */
+      APAC_variety_name=strip(_APAC_apac_name);  /* use for all reports about BI, JP, FN */
+      APAC_current_plc=strip(_APAC_apac_plc);  /* use for all reports about BI, JP, FN */
+      APAC_future_plc=strip(_APAC_apac_future_plc); /* use for all reports about BI, JP, FN */
       APAC_date_of_future_plc=input(_APAC_apac_date_of_future_plc, date11.);
       APAC_replace_by=input(_APAC_apac_replace_by, best.);
       APAC_replacement_date=input(_APAC_apac_replacement_date__d, date11.);
       APAC_abc=strip(_APAC_apac_abc);
-      APAC_channel_bi=strip(_APAC_apac___channel_syt_bi);
-      APAC_channel_floranova=strip(_APAC_apac___channel_floranova);
-      APAC_channel_japan=strip(_APAC_apac___channel_japan);
+      APAC_channel_bi=strip(_APAC_apac___channel_syt_bi);  /* use this for BI, JP, FN */
+      APAC_channel_floranova=strip(_APAC_apac___channel_floranova);  /* do not use */
+      APAC_channel_japan=strip(_APAC_apac___channel_japan);          /* do not use */
       APAC_regional_product_manager=strip(_APAC_regional_product_manager_r);
 
       /*AME*/
@@ -431,26 +431,28 @@ OPTION VALIDVARNAME=V7;
 /*    if channel_floranova='Y' then output;*/
 /*  run;*/
 
+  /* bugfix - configuration adjustment - BI, JP and FN use APAC configuration */
+  
   data DMIMPORT.PMD_BI(drop=channel:);
     length region $6.;
     set DMIMPORT.PMD_APAC;
     region='BI';
-    if channel_bi='Y' then output;
+    if channel_bi='Y' then output;   
   run;
 
   data DMIMPORT.PMD_JP(drop=channel:);
     length region $6.;
     set DMIMPORT.PMD_APAC;
     region='JP';
-    if channel_japan='Y' then output;
+    if channel_japan='Y' then output; 
   run;
 
-/* bugfix - configuration adjustment */
+
   data DMIMPORT.PMD_FN(drop=channel:);
     length region $6.;
     set DMIMPORT.PMD_APAC;
     region='FN';
-    if channel_floranova='Y' then output;
+    if channel_floranova='Y' then output; 
   run;
 
 %mend IMPORT_PMD_ASSORTMENT;
