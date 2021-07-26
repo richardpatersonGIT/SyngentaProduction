@@ -439,7 +439,7 @@ OPTION VALIDVARNAME=V7;
     set DMIMPORT.PMD_APAC;
     region='BI';
 	series_name_in_region=apac_series_description;  /* 23 JULY 2021 RMP feature request : regional series names */
-	abc = APAC_abc;  								/* 23 JULY 2021 RMP feature request : regional ABC classes */
+	abc = abc;      								/* 23 JULY 2021 RMP feature request : regional ABC classes */
     if channel_bi='Y' then output;   
   run;
 
@@ -448,7 +448,7 @@ OPTION VALIDVARNAME=V7;
     set DMIMPORT.PMD_APAC;
     region='JP';
 	series_name_in_region=apac_series_description;  /* 23 JULY 2021 RMP feature request : regional series names */
-	abc = APAC_abc;  								/* 23 JULY 2021 RMP feature request : regional ABC classes */
+	abc = abc;  								    /* 23 JULY 2021 RMP feature request : regional ABC classes */
     if channel_japan='Y' then output; 
   run;
 
@@ -457,7 +457,7 @@ OPTION VALIDVARNAME=V7;
     set DMIMPORT.PMD_APAC;
     region='FN';
 	series_name_in_region=apac_series_description;  /* 23 JULY 2021 RMP feature request : regional series names */
-	abc = APAC_abc;  								/* 23 JULY 2021 RMP feature request : regional ABC classes */
+	abc = abc;  								/* 23 JULY 2021 RMP feature request : regional ABC classes */
     if channel_floranova='Y' then output; 
   run;
 
