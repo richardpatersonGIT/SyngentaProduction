@@ -393,7 +393,16 @@ quit;
     hash_species=upcase(species);
     rc=extrapolation_country.find();
     rc=extrapolation_species.find();
-    if ^missing(extrapolation_rate_species) then extrapolation_sales_species=round(historical_sales/extrapolation_rate_species, 1);
+
+    
+	
+    if ^missing(extrapolation_rate_species) then do;
+	    /* bugfix 26JUL2021 : extrapolation cannot be lower than current sales total */
+	    if extrapolation_rate_species > 1 then 
+		   extrapolation_sales_species=round(historical_sales/1, 1);
+        else 
+		   extrapolation_sales_species=round(historical_sales/extrapolation_rate_species, 1);
+    end;
   run;
 
 /*</EXTRAPOLATION>*/
