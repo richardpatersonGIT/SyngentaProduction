@@ -31,14 +31,17 @@
                                   Season  
                                   Season_week_start  
                                   Note);
-    if ^missing(coalesceC(of _character_)) or ^missing(coalesce(of _numeric_)) then output;
+
+    if ^missing(coalesceC(of _character_)) /*or ^missing(coalesce(of _numeric_))*/ then output;
   run;
 
   data dmimport.orders_report_md(drop=_: rename=(season=order_season product_form=PF_for_sales_text));
-    length hash 8.;
-    set orders_report_md_raw1(rename=(season_week_start=_season_week_start));
+    length hash 8. season 8.;
+    set orders_report_md_raw1(rename=(season_week_start=_season_week_start season=_season));
     hash=1;
     season_week_start=input(_season_week_start, best.);
+	season=input(_season,best.);
+	
   run;
 
 %mend read_or_metadata;
