@@ -449,7 +449,7 @@ OPTION VALIDVARNAME=V7;
     region='JP';
 	series_name_in_region=apac_series_description;  /* 23 JULY 2021 RMP feature request : regional series names */
 	abc = abc;  								    /* 23 JULY 2021 RMP feature request : regional ABC classes */
-    if channel_japan='Y' then output; 
+    if channel_bi='Y' then output;                  /* 05AUG2021 RMP bugfix */
   run;
 
   data DMIMPORT.PMD_FN(drop=channel:);
@@ -458,7 +458,7 @@ OPTION VALIDVARNAME=V7;
     region='FN';
 	series_name_in_region=apac_series_description;  /* 23 JULY 2021 RMP feature request : regional series names */
 	abc = abc;  								/* 23 JULY 2021 RMP feature request : regional ABC classes */
-    if channel_floranova='Y' then output; 
+    if channel_bi='Y' then output;              /* 05AUG2021 RMP bugfix */
   run;
 
 %mend IMPORT_PMD_ASSORTMENT;
