@@ -461,6 +461,12 @@
     left join fr1 f on f.variety=a.variety;
   quit;
 
+  data fr2;
+    set fr2;
+	if upcase(region)='FN' and upcase(country) ne 'FN' then delete;
+  run;
+
+
   %let previous_season=%eval(&season.-1);
 
   %let current_year=%substr(&current_year_week., 1, 4);
