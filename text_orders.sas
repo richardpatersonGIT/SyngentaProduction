@@ -934,6 +934,14 @@
     end;
 
   run;
+  
+  /* delete records where reject_codes not belonging to region */
+  data orders_sub_unit;
+    set orders_sub_unit;
+	if region='SFE' and rsn_rej_cd in ('01', '02', '57', '68') then delete;
+	else if region in ('BI' 'JP' 'FN') and rsn_rej_cd in ('60','64') then delete;
+  run;
+  
 
   data dmproc.orders_seasons(drop=rc);
     set orders_sub_unit;
