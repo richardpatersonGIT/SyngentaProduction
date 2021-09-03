@@ -911,11 +911,9 @@
     
     if ^missing(sub_unit) then do;
 	  if region='SFE' and rsn_rej_cd in ('23','60', '64','78') then do;
-        historical_sales=0;
         actual_sales=ord_qty * sub_unit;
       end; 
 	 else if region in ('BI' 'JP' 'FN') and rsn_rej_cd in ('01', '02', '23', '57', '68', '78') then do;
-        historical_sales=0;
         actual_sales=ord_qty * sub_unit;
      end;
      else do;
@@ -938,8 +936,16 @@
   /* delete records where reject_codes not belonging to region */
   data orders_sub_unit;
     set orders_sub_unit;
-	if region='SFE' and rsn_rej_cd in ('01', '02', '57', '68') then delete;
-	else if region in ('BI' 'JP' 'FN') and rsn_rej_cd in ('60','64') then delete;
+	if region='SFE' and rsn_rej_cd in ('01', '02', '57', '68') then do;
+		historical_sales=0;
+		actual_sales=0;
+	end;
+	else if region in ('BI' 'JP' 'FN') and rsn_rej_cd in ('60','64') then do;
+		actual_sales=0;
+		historical_sales=0;
+	end;
+	
+	if ^missing(rsn_rej_cd) then historical_sales=0;
   run;
   
 
