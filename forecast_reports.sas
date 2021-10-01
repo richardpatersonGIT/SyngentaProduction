@@ -1488,7 +1488,7 @@
   data dmimport.Forecast_reports_md;
     set dmimport.Forecast_reports_md;
     if strip(step1)='Y' or
-       strip(step2)='Y' orv
+       strip(step2)='Y' or
        strip(step3)='Y' or
        strip(step4)='Y' then do;
       output;

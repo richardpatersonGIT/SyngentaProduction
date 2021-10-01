@@ -32,7 +32,7 @@
                                   Season_week_start  
                                   Note);
 
-    if ^missing(coalesceC(of _character_)) /*or ^missing(coalesce(of _numeric_))*/ then output;
+    if ^missing(coalesceC(of _character_)) or ^missing(coalesce(of _numeric_)) then output;
   run;
 
   data dmimport.orders_report_md(drop=_: rename=(season=order_season product_form=PF_for_sales_text));
