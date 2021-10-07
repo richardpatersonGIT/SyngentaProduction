@@ -432,7 +432,6 @@ OPTION VALIDVARNAME=V7;
 /*    if channel_floranova='Y' then output;*/
 /*  run;*/
 
-
   /* bugfix - configuration adjustment - BI, JP and FN use APAC configuration */
   
   data DMIMPORT.PMD_BI(drop=channel:);

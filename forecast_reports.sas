@@ -437,7 +437,7 @@
       %if &product_line_group ne %then strip(product_line_group) = "&Product_line_group.";
       %if &product_line_group ne and &species ne %then and lowcase(species) in (&species); 
       %else %if &species ne %then lowcase(species) in (&species);
-      and current_plc in ('E2', 'F0', 'F1', 'F2', 'F3', 'F4', 'G0', 'G2') /*and strip(seasons)="&seasonality."*/ then output;;
+      and current_plc in ('E2', 'F0', 'F1', 'F2', 'F3', 'F4', 'G0', 'G2') and strip(seasons)="&seasonality." then output;;
   run;
 
 
@@ -488,10 +488,13 @@
     left join fr1 f on f.variety=a.variety;
   quit;
 
+
   data fr2;
     set fr2;
 	if upcase(region)='FN' and upcase(country) ne 'FN' then delete;
   run;
+
+
 
   %let previous_season=%eval(&season.-1);
 
@@ -908,14 +911,13 @@
       run;
   %end;
 
-
   data fr_end(drop=series_name_in_region abc);
     set fr11;
 	/* RMP (1 JUNE 2021) - feature request - use regional series name when available, see also change in xls_pmd_global.sas */
 	series=coalescec(series_name_in_region, series);
     /* RMP (1 JUNE 2021) - feature request - use ABC class from PMD not tactical plan */
 	crop_categories = abc;
-
+  run;
 
   proc sort data=fr_end;
     by product_line species series variety order country;

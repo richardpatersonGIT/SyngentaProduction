@@ -31,6 +31,7 @@
                                   Season  
                                   Season_week_start  
                                   Note);
+
     if ^missing(coalesceC(of _character_)) or ^missing(coalesce(of _numeric_)) then output;
   run;
 
@@ -395,7 +396,6 @@ quit;
     hash_species=upcase(species);
     rc=extrapolation_country.find();
     rc=extrapolation_species.find();
-
 
     
 	

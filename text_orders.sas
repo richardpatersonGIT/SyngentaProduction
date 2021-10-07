@@ -908,7 +908,6 @@
         actual_sales=historical_sales;
       end;
     end;
-
     
     if ^missing(sub_unit) then do;
 	  if region='SFE' and rsn_rej_cd in ('23','60', '64','78') then do;
@@ -923,6 +922,7 @@
       end;
     end;
 
+
     br_actual_sales=0;
     br_historical_sales=0;
 
@@ -932,7 +932,6 @@
     end;
 
   run;
-
   
   /* delete records where reject_codes not belonging to region */
   data orders_sub_unit;
@@ -950,7 +949,6 @@
   run;
   
 
-
   data dmproc.orders_seasons(drop=rc);
     set orders_sub_unit;
     length  season_week_start season_week_end 
@@ -967,7 +965,6 @@
     rc=pmd_assortment.find(); 
 
     
-
     order_year=year(Hdr_req_deldte);
     order_month=month(Hdr_req_deldte);
     order_yweek=input(substr(put(Hdr_req_deldte, weekv9.), 1, 4), 4.);
