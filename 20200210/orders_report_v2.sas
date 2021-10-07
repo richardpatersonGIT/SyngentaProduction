@@ -5,10 +5,9 @@
 /*OUT: Excel file to sales_report_folder (check configuration.sas)*/
 /***********************************************************************/
 
-%include "C:\SAS\APPLICATIONS\SAS\configuration.sas";
+%include "C:\APPLICATIONS\SAS\configuration.sas";
 %include "&sas_applications_folder.\cleanup_xlsx_bak_folder.sas";
 %include "&sas_applications_folder.\filter_orders.sas";
-%include "&sas_applications_folder.\extrapolation_extraction.sas";
 
 %macro read_or_metadata();
 
@@ -18,29 +17,15 @@
   RUN;
 
   data orders_report_md_raw1;
-    set orders_report_md_raw(keep=Region  
-                                  Country  
-                                  Product_Line  
-                                  Product_line_group  
-                                  Species  Series  
-                                  Variety  
-                                  Material  
-                                  Product_form  
-                                  Process_stage  
-                                  Mat_div  
-                                  Season  
-                                  Season_week_start  
-                                  Note);
+    set orders_report_md_raw;
     if ^missing(coalesceC(of _character_)) or ^missing(coalesce(of _numeric_)) then output;
   run;
 
   data dmimport.orders_report_md(drop=_: rename=(season=order_season product_form=PF_for_sales_text));
-    length hash 8. season 8.;
-    set orders_report_md_raw1(rename=(season_week_start=_season_week_start season=_season));
+    length hash 8.;
+    set orders_report_md_raw1(rename=(season_week_start=_season_week_start));
     hash=1;
     season_week_start=input(_season_week_start, best.);
-	season=input(_season,best.);
-	
   run;
 
 %mend read_or_metadata;
@@ -84,8 +69,8 @@
           Mat_grp
           material
           Matdescr
-          SchedLine_Cnf_deldte 
-		  Hdr_req_deldte
+          SchedLine_Cnf_deldte
+          _Order_Week 
           Order_week
           Order_month
           Line_crdte
@@ -123,8 +108,6 @@
           line_nr
           Itm_Net_val
           Net_value_curr
-          species_code
-          order_week_org
           );
     length rc hash reject 8.;
     set orders_filtered;
@@ -290,128 +273,8 @@
     if reject=0 then output;
   run;
 
-  data order_report1(drop=hash_mat_div _price rc);
-    set order_report;
-    length rc _price price actual_sales_value historical_sales_value 8.;
-    length hash_mat_div $3.;
-    if _n_=1 then do;
-      declare hash price_list(dataset: 'dmimport.price_list(rename=(price=_price))');
-          rc=price_list.DefineKey ('region', 'product_line', 'species_code');
-          rc=price_list.DefineData ('_price', 'hash_mat_div');
-          rc=price_list.DefineDone();
-    end;
-    rc=price_list.find();
-    if rc=0 then do;
-      if index(strip(compress(mat_div, '', 'ka')), strip(hash_mat_div))>0 then do;
-        price=_price;
-        actual_sales_value=actual_sales*price;
-        historical_sales_value=historical_sales*price;
-      end;
-    end;
-  run;
-
-/*<EXTRAPOLATION>*/
-
-data _null_;
-  call symputx('current_week', input(substr(put(today(), weekv9.), 6, 2), 2.));
-run;
-
-proc sql;
-create table order_extrapolation_conf as
-select product_line_group, region, mat_div, 
-        put(season_week_start, z2.)||'-'||put(season_week_end, z2.) as seasonality,
-        delivery_season-1 as hist_season,
-        &current_week. as week, count(*) as cnt from order_report1
-group by product_line_group, region, delivery_season, mat_div,  season_week_start, season_week_end;
-quit;
-
-  proc sql noprint;
-    select count(*) into :order_extrapolation_cnt trimmed from order_extrapolation_conf;
-  quit;
-
-  %if &order_extrapolation_cnt.^="" %then %do;
-      %do oe=1 %to &order_extrapolation_cnt.;
-        data order_extrapolation_conf1;
-          set order_extrapolation_conf(obs=&oe. firstobs=&oe.);
-        run;
-
-        %extrapolation_extraction(extrapolation_config_ds=order_extrapolation_conf1);
-
-        %if &oe.=1 %then %do;
-          options varlenchk=nowarn;
-          data species_sales_percentage_all;
-            length product_line_group $20.;
-            set species_sales_percentage;
-          run;
-
-          data country_sales_percentage_all;
-            length product_line_group $20.;
-            set country_sales_percentage;
-          run;
-          options varlenchk=warn;
-        %end; %else %do;
-          options varlenchk=nowarn;
-          proc append base=species_sales_percentage_all data=species_sales_percentage;
-          run;
-
-          proc append base=country_sales_percentage_all data=country_sales_percentage;
-          run;
-          options varlenchk=warn;
-        %end;
-      %end;
-    %end;
-
-  data species_sales_percentage_all;
-    length hash_species $29.;
-    set species_sales_percentage_all(rename=(extrapolation_rate=extrapolation_rate_species));
-    hash_species=upcase(species);
-    delivery_season=hist_season+1;
-    if extrapolation_rate_country=. then extrapolation_rate_country=0;
-  run;
-
-  data country_sales_percentage_all;
-    length hash_species $29.;
-    set country_sales_percentage_all(rename=(extrapolation_rate=extrapolation_rate_country));
-    hash_species=upcase(species);
-    delivery_season=hist_season+1;
-    if extrapolation_rate_country=. then extrapolation_rate_country=0;
-  run;
-
-  data order_report2(drop=rc hash_species);
-    length hash_species $29.;
-    length rc extrapolation_rate_species extrapolation_rate_country extrapolation_sales_species 8.;
-    set order_report1;
-    if _n_=1 then do;
-      declare hash extrapolation_country(dataset: 'country_sales_percentage_all');
-        rc=extrapolation_country.DefineKey ('region', 'product_line_group', 'delivery_season', 'mat_div', 'hash_species');
-        rc=extrapolation_country.DefineData ('extrapolation_rate_country');
-        rc=extrapolation_country.DefineDone();
-      declare hash extrapolation_species(dataset: 'species_sales_percentage_all');
-        rc=extrapolation_species.DefineKey ('region', 'product_line_group', 'delivery_season', 'mat_div', 'hash_species');
-        rc=extrapolation_species.DefineData ('extrapolation_rate_species');
-        rc=extrapolation_species.DefineDone();
-    end;
-
-    hash_species=upcase(species);
-    rc=extrapolation_country.find();
-    rc=extrapolation_species.find();
-
-
-    
-	
-    if ^missing(extrapolation_rate_species) then do;
-	    /* bugfix 26JUL2021 : extrapolation cannot be lower than current sales total */
-	    if extrapolation_rate_species > 1 then 
-		   extrapolation_sales_species=round(historical_sales/1, 1);
-        else 
-		   extrapolation_sales_species=round(historical_sales/extrapolation_rate_species, 1);
-    end;
-  run;
-
-/*</EXTRAPOLATION>*/
-
   data order_report_rename;
-    set order_report2;
+    set order_report;
     label Order_type='Order_type';
     label Sls_doc_nr='Sls_doc_nr';
     label Sls_org='Sls_org';
@@ -452,11 +315,11 @@ quit;
     label actual_sales='Actual_sales';
     label season_week_start='Season_start_wk';
     label season_week_end='Season_end_wk';
+    label _Order_Week='Order week';
     label order_week='Del_wk';
     label product_line_group='Product_line_group';
     label Product_Line='Product_Line';
     label species='Species';
-    label species_code='Species Code';
     label series='Series';
     label delivery_week='Del_wk_YYYYWW';
     label delivery_season='Del_wk_season';
@@ -464,13 +327,6 @@ quit;
     label delivery_month='Del_mm_YYYYMM';
     label delivery_month_season='Del_mm_season';
     label order_month='Del_mm';
-    label actual_sales_value='Actual_sales_value';
-    label historical_sales_value='Historical_sales_value';
-    label price='Price';
-    label order_week_org='Order_Week_Org';
-    label extrapolation_rate_species='Extrapol. rate per species';
-    label extrapolation_rate_country='Extrapol. rate per country';
-    label extrapolation_sales_species='Extrapol. Sales per species';
   run;
 
   data order_report_reorder;
@@ -482,12 +338,11 @@ quit;
     Ord_rsn
     Rsn_rej_cd
     Line_crdte
+    _Order_Week
     SchedLine_Cnf_deldte
-	Hdr_req_deldte
     order_week
     order_month
     delivery_year
-    order_week_org
     Sls_org
     Sls_off
     Sls_grp
@@ -505,7 +360,6 @@ quit;
     Product_Line
     product_line_group
     species
-    species_code
     series
     variety
     Var_descr
@@ -530,13 +384,7 @@ quit;
     historical_sales
     actual_sales
     br_actual_sales
-    br_historical_sales
-    price
-    historical_sales_value
-    actual_sales_value
-    extrapolation_rate_species
-    extrapolation_rate_country
-    extrapolation_sales_species;
+    br_historical_sales;
     set order_report_rename;
   run;
 
@@ -563,6 +411,6 @@ quit;
 
   %cleanup_xlsx_bak_folder(cleanup_folder=%str(&sales_report_folder.\));
 
-%mend orders_report;
+%mend;
 
 %orders_report();

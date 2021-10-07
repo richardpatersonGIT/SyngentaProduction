@@ -5,10 +5,10 @@
 /*OUT: Excel file to sales_report_folder (check configuration.sas)*/
 /***********************************************************************/
 
-%include "C:\SAS\APPLICATIONS\SAS\configuration.sas";
+%include "C:\APPLICATIONS\SAS\configuration.sas";
 %include "&sas_applications_folder.\cleanup_xlsx_bak_folder.sas";
 %include "&sas_applications_folder.\filter_orders.sas";
-%include "&sas_applications_folder.\extrapolation_extraction.sas";
+
 
 %macro read_or_metadata();
 
@@ -35,12 +35,10 @@
   run;
 
   data dmimport.orders_report_md(drop=_: rename=(season=order_season product_form=PF_for_sales_text));
-    length hash 8. season 8.;
-    set orders_report_md_raw1(rename=(season_week_start=_season_week_start season=_season));
+    length hash 8.;
+    set orders_report_md_raw1(rename=(season_week_start=_season_week_start));
     hash=1;
     season_week_start=input(_season_week_start, best.);
-	season=input(_season,best.);
-	
   run;
 
 %mend read_or_metadata;
@@ -85,7 +83,6 @@
           material
           Matdescr
           SchedLine_Cnf_deldte 
-		  Hdr_req_deldte
           Order_week
           Order_month
           Line_crdte
@@ -310,108 +307,8 @@
     end;
   run;
 
-/*<EXTRAPOLATION>*/
-
-data _null_;
-  call symputx('current_week', input(substr(put(today(), weekv9.), 6, 2), 2.));
-run;
-
-proc sql;
-create table order_extrapolation_conf as
-select product_line_group, region, mat_div, 
-        put(season_week_start, z2.)||'-'||put(season_week_end, z2.) as seasonality,
-        delivery_season-1 as hist_season,
-        &current_week. as week, count(*) as cnt from order_report1
-group by product_line_group, region, delivery_season, mat_div,  season_week_start, season_week_end;
-quit;
-
-  proc sql noprint;
-    select count(*) into :order_extrapolation_cnt trimmed from order_extrapolation_conf;
-  quit;
-
-  %if &order_extrapolation_cnt.^="" %then %do;
-      %do oe=1 %to &order_extrapolation_cnt.;
-        data order_extrapolation_conf1;
-          set order_extrapolation_conf(obs=&oe. firstobs=&oe.);
-        run;
-
-        %extrapolation_extraction(extrapolation_config_ds=order_extrapolation_conf1);
-
-        %if &oe.=1 %then %do;
-          options varlenchk=nowarn;
-          data species_sales_percentage_all;
-            length product_line_group $20.;
-            set species_sales_percentage;
-          run;
-
-          data country_sales_percentage_all;
-            length product_line_group $20.;
-            set country_sales_percentage;
-          run;
-          options varlenchk=warn;
-        %end; %else %do;
-          options varlenchk=nowarn;
-          proc append base=species_sales_percentage_all data=species_sales_percentage;
-          run;
-
-          proc append base=country_sales_percentage_all data=country_sales_percentage;
-          run;
-          options varlenchk=warn;
-        %end;
-      %end;
-    %end;
-
-  data species_sales_percentage_all;
-    length hash_species $29.;
-    set species_sales_percentage_all(rename=(extrapolation_rate=extrapolation_rate_species));
-    hash_species=upcase(species);
-    delivery_season=hist_season+1;
-    if extrapolation_rate_country=. then extrapolation_rate_country=0;
-  run;
-
-  data country_sales_percentage_all;
-    length hash_species $29.;
-    set country_sales_percentage_all(rename=(extrapolation_rate=extrapolation_rate_country));
-    hash_species=upcase(species);
-    delivery_season=hist_season+1;
-    if extrapolation_rate_country=. then extrapolation_rate_country=0;
-  run;
-
-  data order_report2(drop=rc hash_species);
-    length hash_species $29.;
-    length rc extrapolation_rate_species extrapolation_rate_country extrapolation_sales_species 8.;
-    set order_report1;
-    if _n_=1 then do;
-      declare hash extrapolation_country(dataset: 'country_sales_percentage_all');
-        rc=extrapolation_country.DefineKey ('region', 'product_line_group', 'delivery_season', 'mat_div', 'hash_species');
-        rc=extrapolation_country.DefineData ('extrapolation_rate_country');
-        rc=extrapolation_country.DefineDone();
-      declare hash extrapolation_species(dataset: 'species_sales_percentage_all');
-        rc=extrapolation_species.DefineKey ('region', 'product_line_group', 'delivery_season', 'mat_div', 'hash_species');
-        rc=extrapolation_species.DefineData ('extrapolation_rate_species');
-        rc=extrapolation_species.DefineDone();
-    end;
-
-    hash_species=upcase(species);
-    rc=extrapolation_country.find();
-    rc=extrapolation_species.find();
-
-
-    
-	
-    if ^missing(extrapolation_rate_species) then do;
-	    /* bugfix 26JUL2021 : extrapolation cannot be lower than current sales total */
-	    if extrapolation_rate_species > 1 then 
-		   extrapolation_sales_species=round(historical_sales/1, 1);
-        else 
-		   extrapolation_sales_species=round(historical_sales/extrapolation_rate_species, 1);
-    end;
-  run;
-
-/*</EXTRAPOLATION>*/
-
   data order_report_rename;
-    set order_report2;
+    set order_report1;
     label Order_type='Order_type';
     label Sls_doc_nr='Sls_doc_nr';
     label Sls_org='Sls_org';
@@ -468,9 +365,6 @@ quit;
     label historical_sales_value='Historical_sales_value';
     label price='Price';
     label order_week_org='Order_Week_Org';
-    label extrapolation_rate_species='Extrapol. rate per species';
-    label extrapolation_rate_country='Extrapol. rate per country';
-    label extrapolation_sales_species='Extrapol. Sales per species';
   run;
 
   data order_report_reorder;
@@ -483,7 +377,6 @@ quit;
     Rsn_rej_cd
     Line_crdte
     SchedLine_Cnf_deldte
-	Hdr_req_deldte
     order_week
     order_month
     delivery_year
@@ -533,10 +426,7 @@ quit;
     br_historical_sales
     price
     historical_sales_value
-    actual_sales_value
-    extrapolation_rate_species
-    extrapolation_rate_country
-    extrapolation_sales_species;
+    actual_sales_value;
     set order_report_rename;
   run;
 
@@ -563,6 +453,6 @@ quit;
 
   %cleanup_xlsx_bak_folder(cleanup_folder=%str(&sales_report_folder.\));
 
-%mend orders_report;
+%mend;
 
 %orders_report();

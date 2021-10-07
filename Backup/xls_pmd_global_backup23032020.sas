@@ -8,7 +8,7 @@
 /*    dmimport.seasons_species_exc*/
 /*OUT: DMPROC.PMD_assortment*/
 /***********************************************************************/
-OPTION VALIDVARNAME=V7;
+
 %include "C:\SAS\APPLICATIONS\SAS\configuration.sas";
 %include "&sas_applications_folder.\read_folder.sas";
 
@@ -48,7 +48,7 @@ OPTION VALIDVARNAME=V7;
         org_column_rename $32.;
       retain rcol1;
       
-      col2=substr(lowcase(translate(strip(col2), '_____', '() -.')),1, coalesce(length(col2), 24));
+      col2=substr(lowcase(translate(strip(col2), '____', '() -')),1, coalesce(length(col2), 24));
       if ^missing(col1) then do;
         rcol1=strip(col1);
       end;
@@ -76,7 +76,6 @@ OPTION VALIDVARNAME=V7;
         multiplication_indicator	$2.
         species_code	$4.
         species	$29.
-        global_series_code $3.
         series	$50.
         originator_name	$100.
         genetic_owner	$50.
@@ -96,8 +95,6 @@ OPTION VALIDVARNAME=V7;
         GLOBAL_replacement_date	8.
         GLOBAL_abc	$3.
         GLOBAL_brand	$2.
-        EUROPE_series_code $3.
-        EUROPE_series_description $44.
         EUROPE_variety_name	$100.
         EUROPE_current_plc	$2.
         EUROPE_future_plc	$2.
@@ -108,8 +105,6 @@ OPTION VALIDVARNAME=V7;
         EUROPE_channel_eame	$1.
         EUROPE_channel_floranova	$1.
         EUROPE_regional_product_manager	$100.
-        NAM_series_code $3.
-        NAM_series_description $44.
         NAM_variety_name  $100.
         NAM_current_plc  $2.
         NAM_future_plc  $2.
@@ -118,8 +113,6 @@ OPTION VALIDVARNAME=V7;
         NAM_replacement_date  8.
         NAM_abc  $3.
         NAM_regional_product_manager  $100.
-        APAC_series_code $3.
-        APAC_series_description $44.
         APAC_variety_name	$100.
         APAC_current_plc	$2.
         APAC_future_plc	$2.
@@ -131,8 +124,6 @@ OPTION VALIDVARNAME=V7;
         APAC_channel_floranova	$1.
         APAC_channel_japan	$1.
         APAC_regional_product_manager	$100.
-        AME_series_code $3.
-        AME_series_description $44.
         AME_variety_name	$100.
         AME_current_plc	$2.
         AME_future_plc	$2.
@@ -143,8 +134,6 @@ OPTION VALIDVARNAME=V7;
         AME_channel_bi	$1.
         AME_channel_floranova	$1.
         AME_regional_product_manager	$100.
-        LATAM_series_code $3.
-        LATAM_series_description $44.
         LATAM_variety_name	$100.
         LATAM_current_plc	$2.
         LATAM_future_plc	$2.
@@ -176,7 +165,6 @@ OPTION VALIDVARNAME=V7;
       multiplication_indicator=strip(_multiplication_indicator);
       species_code=strip(_species_code);
       species=strip(_species);
-      global_series_code=strip(_global_series_code);
       series=strip(_global_series);
       originator_name=strip(_originator_name);
       genetic_owner=strip(_genetic_owner_name);
@@ -200,11 +188,9 @@ OPTION VALIDVARNAME=V7;
       GLOBAL_brand=strip(_GLOBAL_brand);
 
       /*EUROPE*/
-      EUROPE_series_code=strip(_EUROPE_europe_series_code);
-      EUROPE_series_description=strip(_EUROPE_europe_series_descriptio); /* use for SFE */
-      EUROPE_variety_name=strip(_EUROPE_europe_name); /* use for SFE */
-      EUROPE_current_plc=strip(_EUROPE_europe_plc); /* use for SFE */
-      EUROPE_future_plc=strip(_EUROPE_europe_future_plc); /* use for SFE */
+      EUROPE_variety_name=strip(_EUROPE_europe_name);
+      EUROPE_current_plc=strip(_EUROPE_europe_plc);
+      EUROPE_future_plc=strip(_EUROPE_europe_future_plc);
       EUROPE_date_of_future_plc=input(_EUROPE_europe_date_of_future_pl, date11.);
       EUROPE_replace_by=input(_EUROPE_europe_replace_by, best.);
       EUROPE_replacement_date=input(_EUROPE_europe_replacement_date_, date11.);
@@ -214,8 +200,6 @@ OPTION VALIDVARNAME=V7;
       EUROPE_regional_product_manager=strip(_EUROPE_regional_product_manager);
 
       /*NAM*/
-      NAM_series_code=strip(_NAM_n__america_series_code);
-      NAM_series_description=strip(_NAM_n__america_series_descripti);
       NAM_variety_name=strip(_NAM_NAM_name);
       NAM_current_plc=strip(_NAM_NAM_plc);
       NAM_future_plc=strip(_NAM_NAM_future_plc);
@@ -226,23 +210,19 @@ OPTION VALIDVARNAME=V7;
       NAM_regional_product_manager=strip(_NAM_regional_product_manager_re);
 
       /*APAC*/
-      APAC_series_code=strip(_APAC_apac_series_code);
-      APAC_series_description=strip(_APAC_apac_series_description);  /* use for all reports about BI, JP, FN */
-      APAC_variety_name=strip(_APAC_apac_name);  /* use for all reports about BI, JP, FN */
-      APAC_current_plc=strip(_APAC_apac_plc);  /* use for all reports about BI, JP, FN */
-      APAC_future_plc=strip(_APAC_apac_future_plc); /* use for all reports about BI, JP, FN */
+      APAC_variety_name=strip(_APAC_apac_name);
+      APAC_current_plc=strip(_APAC_apac_plc);
+      APAC_future_plc=strip(_APAC_apac_future_plc);
       APAC_date_of_future_plc=input(_APAC_apac_date_of_future_plc, date11.);
       APAC_replace_by=input(_APAC_apac_replace_by, best.);
       APAC_replacement_date=input(_APAC_apac_replacement_date__d, date11.);
       APAC_abc=strip(_APAC_apac_abc);
-      APAC_channel_bi=strip(_APAC_apac___channel_syt_bi);  /* use this for BI, JP, FN */
-      APAC_channel_floranova=strip(_APAC_apac___channel_floranova);  /* do not use */
-      APAC_channel_japan=strip(_APAC_apac___channel_japan);          /* do not use */
+      APAC_channel_bi=strip(_APAC_apac___channel_syt_bi);
+      APAC_channel_floranova=strip(_APAC_apac___channel_floranova);
+      APAC_channel_japan=strip(_APAC_apac___channel_japan);
       APAC_regional_product_manager=strip(_APAC_regional_product_manager_r);
 
       /*AME*/
-      AME_series_code=strip(_AME_ame_series_code);
-      AME_series_description=strip(_AME_ame_series_description);
       AME_variety_name=strip(_AME_ame_name);
       AME_current_plc=strip(_AME_ame_plc);
       AME_future_plc=strip(_AME_ame_future_plc);
@@ -255,8 +235,6 @@ OPTION VALIDVARNAME=V7;
       AME_regional_product_manager=strip(_AME_regional_product_manager_re);
 
       /*LATAM*/
-      LATAM_series_code=strip(_LATAM_latam_series_code);
-      LATAM_series_description=strip(_LATAM_latam_series_description);
       LATAM_variety_name=strip(_LATAM_latam_name);
       LATAM_current_plc=strip(_LATAM_latam_plc);
       LATAM_future_plc=strip(_LATAM_latam_future_plc);
@@ -397,75 +375,37 @@ OPTION VALIDVARNAME=V7;
   run;
 
   data DMIMPORT.PMD_SFE(drop=channel:);
-    length region $6. series_name_in_region $44;
+    length region $6.;
     set DMIMPORT.PMD_EUROPE;
     region='SFE';
-	series_name_in_region=europe_series_description;   /* 1 JUNE 2021 RMP feature request : regional series names */
-	abc = ABC;                                  /* 1 JUNE 2021 RMP feature request : regional ABC classes */
     if channel_eame='Y' then output;
-  run;
-
-    data DMIMPORT.PMD_FN(DROP=EUROPE: NAM: APAC: LATAM:);
-    length region $6. series_name_in_region $44;
-    set DMIMPORT.PMD_ALL(rename=(
-                    AME_variety_name=Variety_name 
-                    AME_current_plc=Current_PLC
-                    AME_future_plc=Future_PLC
-                    AME_date_of_future_plc=Future_PLC_Active_date
-                    EUROPE_replace_by=replace_by
-                    EUROPE_replacement_date=replacement_date
-                    EUROPE_abc=abc
-                    AME_channel_bi=channel_BI
-                    EUROPE_channel_floranova=channel_FLORANOVA
-                    EUROPE_regional_product_manager=regional_product_manager
-                    )); 
-    region="FN";
-    variety_name=coalescec(variety_name, GLOBAL_variety_name);
-	series_name_in_region=europe_series_description;
-    if ^missing(Variety_name) and Variety_name ^= "0" and channel_floranova='Y' then output;
-  run;
-
-/*  data DMIMPORT.PMD_FN(drop=channel:);*/
-/*    length region $6.;*/
-/*    set DMIMPORT.PMD_EUROPE;*/
-/*    region='FN';*/
-/*    if channel_floranova='Y' then output;*/
-/*  run;*/
-
-
-  /* bugfix - configuration adjustment - BI, JP and FN use APAC configuration */
-  
-  data DMIMPORT.PMD_BI(drop=channel:);
-    length region $6. series_name_in_region $44;
-    set DMIMPORT.PMD_APAC;
-    region='BI';
-	series_name_in_region=apac_series_description;  /* 23 JULY 2021 RMP feature request : regional series names */
-	abc = abc;      								/* 23 JULY 2021 RMP feature request : regional ABC classes */
-    if channel_bi='Y' then output;   
-  run;
-
-  data DMIMPORT.PMD_JP(drop=channel:);
-    length region $6. series_name_in_region $44;
-    set DMIMPORT.PMD_APAC;
-    region='JP';
-	series_name_in_region=apac_series_description;  /* 23 JULY 2021 RMP feature request : regional series names */
-	abc = abc;  								    /* 23 JULY 2021 RMP feature request : regional ABC classes */
-    if channel_bi='Y' then output;                  /* 05AUG2021 RMP bugfix */
   run;
 
   data DMIMPORT.PMD_FN(drop=channel:);
     length region $6.;
-    set DMIMPORT.PMD_APAC;
+    set DMIMPORT.PMD_EUROPE;
     region='FN';
-	series_name_in_region=apac_series_description;  /* 23 JULY 2021 RMP feature request : regional series names */
-	abc = abc;  								/* 23 JULY 2021 RMP feature request : regional ABC classes */
-    if channel_bi='Y' then output;              /* 05AUG2021 RMP bugfix */
+    if channel_floranova='Y' then output;
   run;
+
+  data DMIMPORT.PMD_BI(drop=channel:);
+    length region $6.;
+    set DMIMPORT.PMD_APAC;
+    region='BI';
+    if channel_bi='Y' then output;
+  run;
+
+  data DMIMPORT.PMD_JP(drop=channel:);
+    length region $6.;
+    set DMIMPORT.PMD_APAC;
+    region='JP';
+    if channel_japan='Y' then output;
+  run;
+
 
 %mend IMPORT_PMD_ASSORTMENT;
 
 %macro PROCESS_PMD_ASSORTMENT();
-
   data PMD;
     length variety 8.;
     length Replace_by 8.;
@@ -491,9 +431,7 @@ OPTION VALIDVARNAME=V7;
     end; else do;
       genetics='Third party';
     end;
-    if Parent_Line_Indicator='N' and 
-       ^missing(variety) 
-      then output;
+    if Parent_Line_Indicator='N' then output;
   run;
 
   data PMD1;
