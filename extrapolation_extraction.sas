@@ -170,7 +170,7 @@
 
   run;
 
-  data sales_history3(keep=sls_org region year week species order_season country historical_sales product_line_group);
+  data sales_history3(keep=sls_org region year week species variety order_season country historical_sales product_line_group);
     set sales_history2;
     length  season_week_start season_week_end 
              Order_season_start order_year order_season order_week Order_yweek order_month macro_extrapolation_season 8.;
@@ -210,9 +210,9 @@
 
   proc sql;
     create table sales_history_aggr as
-    select region, year, week, species, order_season, country, round(sum(historical_sales),1) as country_sales_aggr 
+    select region, year, week, species, variety, order_season, country, round(sum(historical_sales),1) as country_sales_aggr 
       from sales_history4 
-      group by region, year, week, species, order_season, country;
+      group by region, year, week, species, variety, order_season, country;
   quit;
 
   proc sql;
@@ -223,8 +223,8 @@
 
   proc sql;
     create table species_mid_season_aggr as
-    select region, year, week, species, order_season, round(sum(country_sales_aggr),1) as species_sales_aggr from country_mid_season_aggr a
-    group by region, year, week, species, order_season;
+    select region, year, week, species, variety, order_season, round(sum(country_sales_aggr),1) as species_sales_aggr from country_mid_season_aggr a
+    group by region, year, week, species, variety, order_season;
   quit;
 
   proc sql;
@@ -235,22 +235,22 @@
 
   proc sql;
     create table species_end_season_aggr as
-    select region, year, week, species, order_season, round(sum(country_sales_aggr),1) as species_sales_aggr from country_end_season_aggr a
-    group by region, year, week, species, order_season;
+    select region, year, week, species, variety, order_season, round(sum(country_sales_aggr),1) as species_sales_aggr from country_end_season_aggr a
+    group by region, year, week, species, variety, order_season;
   quit;
 
   proc sql;
     create table all_country_weeks as
     select b.*, a.* from 
       (select distinct mid_season_year, mid_season_week from extrapolation_report_md1) a
-      inner join (select distinct species, country from country_end_season_aggr) b on 1=1;
+      inner join (select distinct species, variety, country from country_end_season_aggr) b on 1=1;
   quit;
 
   proc sql;
     create table all_species_weeks as
     select b.*, a.* from  
       (select distinct mid_season_year, mid_season_week from extrapolation_report_md1) a
-      inner join (select distinct species from species_end_season_aggr) b on 1=1;
+      inner join (select distinct species, variety from species_end_season_aggr) b on 1=1;
   quit;
 
   proc sql;
@@ -258,6 +258,7 @@
     select   e.region, 
             "&product_line_group." as product_line_group, 
             e.species, 
+			e.variety, 
             "&mat_div." as mat_div,
             e.order_season as hist_season,
             a.country, 
@@ -267,15 +268,16 @@
             e.country_sales_aggr as end_season_sales,  
             m.country_sales_aggr/e.country_sales_aggr as extrapolation_rate 
     from all_country_weeks a
-    left join country_end_season_aggr e on a.species=e.species and a.country=e.country  
-    left join country_mid_season_aggr m on m.species=a.species and m.country=a.country and m.year=a.mid_season_year and m.week=a.mid_season_week;
+    left join country_end_season_aggr e on a.species=e.species and a.variety=e.variety and a.country=e.country  
+    left join country_mid_season_aggr m on m.species=a.species and m.variety=e.variety and m.country=a.country and m.year=a.mid_season_year and m.week=a.mid_season_week;
   quit;
 
   proc sql;
   create table species_sales_percentage as
     select   e.region, 
             "&product_line_group." as product_line_group, 
-            e.species, 
+            e.species,
+			e.variety, 
             "&mat_div." as mat_div,
             e.order_season as hist_season, 
             a.mid_season_year as mid_year,
@@ -284,8 +286,8 @@
             e.species_sales_aggr as end_season_sales,  
             m.species_sales_aggr/e.species_sales_aggr as extrapolation_rate 
     from all_species_weeks a
-    left join species_end_season_aggr e on a.species=e.species  
-    left join species_mid_season_aggr m on m.species=a.species and m.year=a.mid_season_year and m.week=a.mid_season_week;
+    left join species_end_season_aggr e on a.species=e.species and a.variety=e.variety
+    left join species_mid_season_aggr m on m.species=a.species and m.variety=e.variety and m.year=a.mid_season_year and m.week=a.mid_season_week;
   quit;
 
 %mend extrapolation_extraction;
