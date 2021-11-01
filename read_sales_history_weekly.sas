@@ -192,9 +192,9 @@
   data sales_history5;
     set sales_history4;
 	if 
-      %if &product_line_group ne %then strip(product_line_group) = "&Product_line_group.";
-      %if &product_line_group ne and &species ne %then and lowcase(hash_species_name) in (&species); 
-      %else %if &species ne %then lowcase(hash_species_name) in (&species);;
+      %if %bquote(&product_line_group) ne %then strip(product_line_group) = "&Product_line_group.";
+      %if %bquote(&product_line_group) ne and %bquote(&species) ne %then and lowcase(hash_species_name) = "&species"; 
+      %else %if %bquote(&species) ne %then lowcase(hash_species_name) = "&species";;
   run;
 
       
