@@ -633,6 +633,12 @@ run;
 
 %end;
 %let rc=%sysfunc(close(&dsid));
+
+data sales_percentage;
+  set sales_percentage_all;
+run;
+
+
 %mend;
 %setvar;
 
@@ -652,9 +658,6 @@ run;
 
 %end;
 
-data sales_percentages;
-  set sales_percentage_all;
-run;
 
 
   data fr3(drop=rc historical_sales actual_sales order_season);
