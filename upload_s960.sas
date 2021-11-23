@@ -112,7 +112,7 @@
 	and a.product_form=b.process_stage
 	and a.species=b.species 
 	and a.series=b.series
-	and a.variety and b.variety
+	and a.variety=b.variety
 	
 	order by a.product_line, a.species, a.variety, a.material, a.product_form;
   quit;
