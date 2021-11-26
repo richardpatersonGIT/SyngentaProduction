@@ -507,7 +507,7 @@
             %if "&region."="BI" %then %do;
               'NL01' as Sales_Org,
               'NL81' as Sales_Off,
-              'NL02' as Plant,
+              'NLUC' as Plant,
             %end;
             %if "&region."="WHS" %then %do;
               'NL01' as Sales_Org,
@@ -519,6 +519,12 @@
               'JP02' as Sales_Off,
               'JP01' as Plant,
             %end;
+            %if "&region."="FN" %then %do;
+              'NL01' as Sales_Org,
+              'NL84' as Sales_Off,
+              'NLUC' as Plant,
+            %end;
+
             a.variety as Variety,
             a.variety as Material,
             variety_desc as Material_Description,
