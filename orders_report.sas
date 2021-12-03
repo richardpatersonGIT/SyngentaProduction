@@ -291,12 +291,17 @@
     if reject=0 then output;
   run;
 
+  data price_list;
+    set dmimport.price_list;
+	if upcase(region)='EUROPE' then region='SFE';
+  run;
+
   data order_report1(drop=hash_mat_div _price rc);
     set order_report;
     length rc _price price actual_sales_value historical_sales_value 8.;
     length hash_mat_div $3.;
     if _n_=1 then do;
-      declare hash price_list(dataset: 'dmimport.price_list(rename=(price=_price))');
+      declare hash price_list(dataset: 'work.price_list(rename=(price=_price))');
           rc=price_list.DefineKey ('region', 'product_line', 'species_code');
           rc=price_list.DefineData ('_price', 'hash_mat_div');
           rc=price_list.DefineDone();
@@ -310,6 +315,8 @@
       end;
     end;
   run;
+
+
 
 /*<EXTRAPOLATION>*/
 
