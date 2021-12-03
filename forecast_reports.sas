@@ -1128,6 +1128,20 @@ run;
   quit;
 
 
+  data for_template;
+    set for_template(drop=global_plc	
+                          Global_Future_PLC	
+                          global_valid_from_date 
+                          supply 
+                          capacity
+                          remark 
+                          perc_growth1	
+                          tactical_plan1
+						  perc_growth2	
+                          tactical_plan2 
+                          perc_growth3	
+                          tactical_plan3);
+  run;
 
   proc export 
     data=fr_end 
