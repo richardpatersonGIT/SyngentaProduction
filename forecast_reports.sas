@@ -820,18 +820,29 @@ run;
     end;
   run;
 
+
+  
+  data price_list;
+    set dmimport.price_list;
+    if upcase(region)='EUROPE' then region='SFE';
+  run;
+
+
   data fr3(drop=rc);
     set fr3;
     length rc 8.;
     length price 8.;
     if _n_=1 then do;
-      declare hash price_list(dataset: 'dmimport.price_list');
+      declare hash price_list(dataset: 'work.price_list');
           rc=price_list.DefineKey ('region', 'product_line', 'species_code', 'hash_mat_div');
           rc=price_list.DefineData ('price');
           rc=price_list.DefineDone();
     end;
-    rc=price_list.find();
+     rc=price_list.find();
   run;
+
+
+
 
   proc sql noprint;
   create table fr4 as
