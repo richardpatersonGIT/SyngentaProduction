@@ -1117,7 +1117,10 @@ run;
   %else %if %bquote(&species) NE %then %let excel_report_fname=&region._&species_formatted._&kda_material_division._&first_season._&current_year_week._&_seasonality.;
   %else %let excel_report_fname=&region._&product_line_group_fname._&kda_material_division._&first_season._&current_year_week._&_seasonality.;
   
+  %let excel_report_fname=%sysfunc(compress(&excel_report_fname));
   %let sas_report_fname=&region.&product_line_group_fname.&ka_material_division.&first_season.%substr(&round., 1, 1)&current_year_week.&_seasonality.;
+  %let sas_report_fname=%sysfunc(compress(&sas_report_fname));
+
 
   data dmfcst1.&sas_report_fname.;
     set fr_end;
