@@ -1120,10 +1120,9 @@ run;
   %let excel_report_fname=%sysfunc(compress(&excel_report_fname));
 /*  %let sas_report_fname=&region.&product_line_group_fname.&ka_material_division.&first_season.%substr(&round., 1, 1)&current_year_week.&_seasonality.;*/
   
-  %if &product_line_group = %then 
-  	  %let sas_report_fname=&region._&ka_material_division._&first_season._%substr(&round., 1, 1)_&current_year_week._&_seasonality.;
+  
+  %let sas_report_fname=%sysfunc(compress(&forecast_name));
 
-  %let sas_report_fname=&forecast_name;
 
   %put &=region;
   %put &=product_line_group;
@@ -1194,7 +1193,7 @@ run;
 /*  %let sas_report_fname=%sysfunc(compress(&sas_report_fname));*/
 
   
-  %let sas_report_fname=&forecast_name;
+  %let sas_report_fname=%sysfunc(compress(&forecast_name));
 
   %put &=region;
   %put &=product_line_group;
@@ -1397,7 +1396,8 @@ run;
   %let excel_report_fname=&region._&product_line_group._&kda_material_division._&season._&current_year_week._&_seasonality.;
   %let ka_material_division=%sysfunc(compress(%quote(&material_division.),,ka));
 /*  %let sas_report_fname=&region.&product_line_group.&ka_material_division.&first_season.%substr(&round., 1, 1)&current_year_week.&_seasonality.;*/
-  %let sas_report_fname=&forecast_name;
+  %let sas_report_fname=%sysfunc(compress(&forecast_name));
+
 
   %concatenate_forecast_sm_feedback(sm_feedback_folder=%quote(&sm_feedback_folder.));
 
@@ -1563,7 +1563,8 @@ run;
   %let excel_report_fname=&region._&product_line_group._&kda_material_division._&season._&current_year_week._&_seasonality.;
   %let ka_material_division=%sysfunc(compress(%quote(&material_division.),,ka));
 /*  %let sas_report_fname=&region.&product_line_group.&ka_material_division.&first_season.%substr(&round., 1, 1)&current_year_week.&_seasonality.;*/
-  %let sas_report_fname=&forecast_name;
+  %let sas_report_fname=%sysfunc(compress(&forecast_name));
+
 
   %read_forecast_file(forecast_file=&signoff_file., forecast_sheet=Variety level fcst);
 
