@@ -187,8 +187,9 @@
   proc sql;
     create table FF_plc as
       select country as REGION, variety, 
-             plc, future_plc, valid_from_date,
-             global_plc, global_future_plc, global_valid_from_date 
+             plc, future_plc, valid_from_date
+			 /*,
+             global_plc, global_future_plc, global_valid_from_date*/ 
       from forecast_file where order=3;
   quit;
 

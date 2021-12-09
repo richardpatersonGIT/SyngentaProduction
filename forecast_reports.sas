@@ -26,7 +26,7 @@
     if _n_=1 then do;
       declare hash refresh_plc(dataset: 'dmproc.PMD_assortment(rename=(current_plc=plc future_plc_active_date=valid_from_date  global_current_plc=global_plc global_future_plc_active_date=global_valid_from_date))');
           rc=refresh_plc.DefineKey ('region', 'variety');
-          rc=refresh_plc.DefineData ('plc', 'future_plc', 'valid_from_date', 'global_plc', 'global_future_plc', 'global_valid_from_date');
+          rc=refresh_plc.DefineData ('plc', 'future_plc', 'valid_from_date' /*, 'global_plc', 'global_future_plc', 'global_valid_from_date'*/);
           rc=refresh_plc.DefineDone();
     end;
 
@@ -1230,7 +1230,7 @@ run;
       if _N_=1 then do;
         declare hash refresh_plc(dataset: 'ff_plc');
           rc=refresh_plc.DefineKey ('variety');
-          rc=refresh_plc.DefineData ('plc', 'future_plc', 'valid_from_date', 'global_plc', 'global_future_plc', 'global_valid_from_date');
+          rc=refresh_plc.DefineData ('plc', 'future_plc', 'valid_from_date'/*, 'global_plc', 'global_future_plc', 'global_valid_from_date'*/);
           rc=refresh_plc.DefineDone();
       end;
       rc=refresh_plc.find();
@@ -1246,9 +1246,9 @@ run;
           b.PLC,
           b.future_plc, 
           b.valid_from_date, 
-          b.global_plc, 
-          b.global_future_plc, 
-          b.global_valid_from_date,
+/*          b.global_plc, */
+/*          b.global_future_plc, */
+/*          b.global_valid_from_date,*/
           b.pmf_demand1,
           b.pmf_demand2,
           b.pmf_demand3,
@@ -1599,7 +1599,7 @@ run;
       if _N_=1 then do;
         declare hash refresh_plc(dataset: 'ff_plc');
           rc=refresh_plc.DefineKey ('variety');
-          rc=refresh_plc.DefineData ('plc', 'future_plc', 'valid_from_date', 'global_plc', 'global_future_plc', 'global_valid_from_date');
+          rc=refresh_plc.DefineData ('plc', 'future_plc', 'valid_from_date' /*, 'global_plc', 'global_future_plc', 'global_valid_from_date'*/);
           rc=refresh_plc.DefineDone();
       end;
       rc=refresh_plc.find();
