@@ -22,7 +22,7 @@
   PROC IMPORT OUT=forecast_report_file 
               DATAFILE="&forecast_report_file."
               DBMS=  EXCELCS  REPLACE;
-              RANGE="Variety level fcst$A8:AX"; 
+              RANGE="Variety level fcst$A8:AN"; 
   RUN;
 
   proc contents data=forecast_report_file out=forecast_contents noprint;
@@ -36,13 +36,13 @@
     varnum=10; /*Excel column J*/
     columnname="Variety";
     output;
-    varnum=35; /*Excel column AI*/
+    varnum=29; /*Excel column AC*/
     columnname="Netproposal0";
     output;
-    varnum=41; /*Excel column AO*/
+    varnum=33; /*Excel column AG*/
     columnname="Netproposal1";
     output;
-    varnum=47; /*Excel column AU*/
+    varnum=37; /*Excel column AK*/
     columnname="Netproposal2";
     output;
   run;
@@ -51,6 +51,10 @@
     select compress(name||'=_'||columnname) into :renamestring separated by ' ' from forecast_cols fcols
     left join forecast_contents frcst on fcols.varnum=frcst.varnum;
   quit;
+
+
+  %put &=renamestring;
+
 
   data forecast_report (keep=variety country total_demand Netproposal0 Netproposal1 Netproposal2);
     set forecast_report_file(rename=(&renamestring.));
