@@ -1052,6 +1052,7 @@ run;
 	series=coalescec(series_name_in_region, series);
     /* RMP (1 JUNE 2021) - feature request - use ABC class from PMD not tactical plan */
 	crop_categories = abc;
+	if plc='G2' and Sum(s1,s2,s3,ytd) <=0 then delete;
   run;
 
   proc sort data=fr_end;
@@ -1281,7 +1282,15 @@ run;
     pmf_sm_demand1=pmf_split_demand1;
     pmf_sm_demand2=pmf_split_demand2;
     pmf_sm_demand3=pmf_split_demand3;
+
+	if region="SFE" and country NE "&region" and plc='E2' then do; 
+          pmf_sm_demand1=pmf_demand1 / 9;
+		  pmf_sm_demand2=pmf_demand2 / 9;
+		  pmf_sm_demand3=pmf_demand3 / 9;
+	end;
   run;
+
+  
 
   %if "&refresh_sales_week."^="" %then %do;
     %refresh_sales(table_in=pmf4, table_out=pmf5, refresh_year_week=&refresh_sales_week.);
@@ -1311,14 +1320,25 @@ run;
         global_plc Global_Future_PLC global_valid_from_date 
         s3 s2 s1 
         ytd percentage extrapolation 
-        country_split pmf_supply pmf_capacity remark 
+        country_split /*pmf_supply pmf_capacity remark*/ 
         prev_demand0 assumption0
         perc_growth1 tactical_plan1 pmf_split_demand1 pmf_sm_demand1 prev_demand1 pmf_assm1
         perc_growth2 tactical_plan2 pmf_split_demand2 pmf_sm_demand2 prev_demand2 pmf_assm2 
         perc_growth3 tactical_plan3 pmf_split_demand3 pmf_sm_demand3 prev_demand3 pmf_assm3 
         price;
 
-  data FOR_TEMPLATE_COUNTRIES(keep=&PMF_COLUMNS_FOR_TEMPLATE.);
+  data FOR_TEMPLATE_COUNTRIES(keep=&PMF_COLUMNS_FOR_TEMPLATE. drop=global_plc	
+                          Global_Future_PLC	
+                          global_valid_from_date 
+                          supply 
+                          capacity
+                          remark 
+                          perc_growth1	
+                          tactical_plan1
+						  perc_growth2	
+                          tactical_plan2 
+                          perc_growth3	
+                          tactical_plan3);
     retain &PMF_COLUMNS_FOR_TEMPLATE.;
     set pmf_end;
   call missing(remark);
@@ -1498,7 +1518,7 @@ run;
      global_plc Global_Future_PLC global_valid_from_date  
      s3 s2 s1  
      ytd percentage extrapolation  
-     country_split pmf_supply pmf_capacity remark  
+     country_split /*pmf_supply pmf_capacity remark*/  
      prev_demand0 assumption0
      perc_growth1 tactical_plan1 pmf_split_demand1 smf_demand1 prev_demand1 smf_assm1
      perc_growth2 tactical_plan2 pmf_split_demand2 smf_demand2 prev_demand2 smf_assm2 
