@@ -659,6 +659,7 @@ run;
 %end;
 
 
+%put &=season0 &=season1 &=season2 &=season3;
 
   data fr3(drop=rc historical_sales actual_sales order_season);
     length rc 8.;
@@ -686,6 +687,12 @@ run;
     rc=aorders.find(); 
     ytd=coalesce(actual_sales,0);
 
+    percentage=coalesce(percentage,0);
+    order_season=&season0.;
+    rc=horders.find(); 
+    ytd_invoiced=coalesce(historical_sales,0);
+
+
     order_season=&season1.;
     rc=horders.find();
     s1=coalesce(historical_sales,0);
@@ -700,12 +707,18 @@ run;
     rc=horders.find();
     s3=coalesce(historical_sales,0);
 
+	call missing(historical_sales);
+    order_season=&season1.;
+    rc=aorders.find();
+    actual_sales_previous_season=coalesce(actual_sales,0);
+	
     rc=sales_percentage.find();
 
 	if percentage > 1 then adj_percentage = 1;
 	else adj_percentage = percentage;
     if percentage^=0 then do;
       extrapolation=coalesce(round(ytd/adj_percentage, 1),0);
+	  extrapolation_ytd_invoiced=coalesce(round(ytd_invoiced/adj_percentage, 1),0);
     end; else do;
       extrapolation=0;
     end;
@@ -1065,8 +1078,8 @@ run;
        plc Future_PLC valid_from_date 
        replace_by replacement_date
        global_plc Global_Future_PLC global_valid_from_date 
-       s3 s2 s1 
-       ytd percentage extrapolation 
+       s3 s2 s1 actual_sales_previous_season ytd_invoiced extrapolation_ytd_invoiced
+       ytd  percentage extrapolation 
        country_split supply capacity remark 
        prev_demand0 assumption0
        perc_growth1 tactical_plan1 pm_demand1 sm_demand1 prev_demand1 assumption1 
@@ -1647,18 +1660,18 @@ run;
   run;
 
   %let SO_COLUMNS_FOR_TEMPLATE=order seasons Country Product_Line 
-     crop_categories genetics species_code
+       crop_categories genetics species_code
      Species Series variety Variety_name 
      plc Future_PLC valid_from_date 
      replace_by replacement_date
      global_plc Global_Future_PLC global_valid_from_date  
      s3 s2 s1  
      ytd percentage extrapolation  
-     country_split pmf_supply pmf_capacity remark  
+     country_split /*pmf_supply pmf_capacity remark*/  
      prev_demand0 assumption0
-     perc_growth1 tactical_plan1 so_split_demand1 so_demand1 prev_demand1 so_assm1
-     perc_growth2 tactical_plan2 so_split_demand2 so_demand2 prev_demand2 so_assm2 
-     perc_growth3 tactical_plan3 so_split_demand3 so_demand3 prev_demand3 so_assm3 
+     perc_growth1 tactical_plan1 pmf_split_demand1 smf_demand1 prev_demand1 smf_assm1
+     perc_growth2 tactical_plan2 pmf_split_demand2 smf_demand2 prev_demand2 smf_assm2 
+     perc_growth3 tactical_plan3 pmf_split_demand3 smf_demand3 prev_demand3 smf_assm3 
      price;
 
   data SO_FOR_TEMPLATE(keep=&SO_COLUMNS_FOR_TEMPLATE.);
