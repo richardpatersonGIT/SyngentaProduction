@@ -22,7 +22,7 @@
   PROC IMPORT OUT=forecast_report_file 
               DATAFILE="&forecast_report_file."
               DBMS=  EXCELCS  REPLACE;
-              RANGE="Variety level fcst$A8:AN"; 
+              RANGE="Variety level fcst$A8:AL"; 
   RUN;
 
   proc contents data=forecast_report_file out=forecast_contents noprint;
@@ -36,13 +36,13 @@ data forecast_cols;
     varnum=10; /*Excel column J*/
     columnname="Variety";
     output;
-    varnum=29; /*Excel column AC*/
+    varnum=27; /*Excel column AA*/
     columnname="Netproposal0";
     output;
-    varnum=33; /*Excel column AG*/
+    varnum=31; /*Excel column AE*/
     columnname="Netproposal1";
     output;
-    varnum=37; /*Excel column AK*/
+    varnum=35; /*Excel column AI*/
     columnname="Netproposal2";
     output;
   run;
