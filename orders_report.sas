@@ -126,6 +126,7 @@
           Net_value_curr
           species_code
           order_week_org
+		  shp_plnt
           );
     length rc hash reject 8.;
     set orders_filtered;
@@ -543,7 +544,8 @@ quit;
     actual_sales_value
     extrapolation_rate_species
     extrapolation_rate_country
-    extrapolation_sales_species;
+    extrapolation_sales_species
+    shp_plnt;
     set order_report_rename;
   run;
 
