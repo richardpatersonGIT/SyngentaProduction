@@ -962,6 +962,8 @@ run;
       rc=ff_assmt.find();
       assumption0=ff_assumption;
 
+	  %put &=first_season;
+
       ff_season=&first_season.;
       rc=hash_ff_sm.find();
       prev_demand1=ff_sm;
@@ -1130,10 +1132,10 @@ run;
     s3_delivered=round(s3_delivered,1);
     s2_delivered=round(s2_delivered,1);
     s1_delivered=round(s1_delivered,1);
-    ytd_delivered_s0=round(ytd_delivered,1);
-	ytd_required_s0=round(ytd_required,1);
-    extrapolation_delivered_s0=round(extrapolation_delivered,1);
-    extrapolation_required_s0=round(extrapolation_required,1);
+    ytd_delivered_s0=round(ytd_delivered_s0,1);
+	ytd_required_s0=round(ytd_required_s0,1);
+    extrapolation_delivered_s0=round(extrapolation_delivered_s0,1);
+    extrapolation_required_s0=round(extrapolation_required_s0,1);
   run;
 
   proc sort data=FOR_TEMPLATE;
