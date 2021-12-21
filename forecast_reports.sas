@@ -954,6 +954,8 @@ run;
           rc=ff_assmt.DefineDone();
       end;
 
+	 %put &=season;
+
       ff_season=&season.;
       rc=hash_ff_sm.find();
       prev_demand0=ff_sm;
@@ -1080,8 +1082,8 @@ run;
 	s2_delivered=s2;
 	s3_delivered=s3;
 	required_sales_s1=actual_sales_previous_season;
-	ytd_delivered_s0=coalesce(historical_sales,0);
-	ytd_required_s0=coalesce(actual_sales,0);
+	ytd_delivered_s0=ytd_invoiced;
+	ytd_required_s0=ytd;
 	extrapolation_delivered_s0=extrapolation_ytd_invoiced;
 	extrapolation_required_s0=extrapolation;
 	running_demand_s0=prev_demand0;
@@ -1128,10 +1130,10 @@ run;
     s3_delivered=round(s3_delivered,1);
     s2_delivered=round(s2_delivered,1);
     s1_delivered=round(s1_delivered,1);
-    ytd_delivered=round(ytd_delivered,1);
-	ytd_required=round(ytd_required,1);
-    extrapolation_delivered=round(extrapolation_delivered,1);
-    extrapolation_required=round(extrapolation_required,1);
+    ytd_delivered_s0=round(ytd_delivered,1);
+	ytd_required_s0=round(ytd_required,1);
+    extrapolation_delivered_s0=round(extrapolation_delivered,1);
+    extrapolation_required_s0=round(extrapolation_required,1);
   run;
 
   proc sort data=FOR_TEMPLATE;
