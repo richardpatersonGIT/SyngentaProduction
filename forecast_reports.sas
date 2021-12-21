@@ -721,11 +721,10 @@ run;
 	  extrapolation_ytd_invoiced=coalesce(round(ytd_invoiced/adj_percentage, 1),0);
     end; else do;
       extrapolation=0;
+	  extrapolation_ytd_invoiced=0;
     end;
 
   run;
-
-  
 
   proc sql noprint;
     select 
@@ -1068,6 +1067,28 @@ run;
 	if plc='G2' and Sum(s1,s2,s3,ytd) <=0 then delete;
   run;
 
+
+  
+
+  /* RichardPaterson - 21DEC2021 change name of columns for new format */
+  /* 'required' term now replaces actual_sales */
+  /* 'delivered' term now replaces historical sales and invoiced sales */
+
+  data fr_end;
+    set fr_end;
+    s1_delivered=s1;
+	s2_delivered=s2;
+	s3_delivered=s3;
+	required_sales_s1=actual_sales_previous_season;
+	ytd_delivered_s0=coalesce(historical_sales,0);
+	ytd_required_s0=coalesce(actual_sales,0);
+	extrapolation_delivered_s0=extrapolation_ytd_invoiced;
+	extrapolation_required_s0=extrapolation;
+	running_demand_s0=prev_demand0;
+  run;
+
+
+
   proc sort data=fr_end;
     by product_line species series variety order country;
   run;
@@ -1078,13 +1099,13 @@ run;
        plc Future_PLC valid_from_date 
        replace_by replacement_date
        global_plc Global_Future_PLC global_valid_from_date 
-       s3 s2 s1 actual_sales_previous_season ytd_invoiced extrapolation_ytd_invoiced
-       ytd  percentage extrapolation 
-       country_split supply capacity remark 
-       prev_demand0 assumption0
-       perc_growth1 tactical_plan1 pm_demand1 sm_demand1 prev_demand1 assumption1 
-       perc_growth2 tactical_plan2 pm_demand2 sm_demand2 prev_demand2 assumption2 
-       perc_growth3 tactical_plan3 pm_demand3 sm_demand3 prev_demand3 assumption3
+       s3_delivered s2_delivered s1_delivered required_sales_s1 ytd_delivered_s0 ytd_required_s0 
+       percentage extrapolation_delivered_s0 extrapolation_required_s0 
+       country_split  
+       running_demand_s0 assumption0
+       pm_demand1 sm_demand1 prev_demand1 assumption1 
+       pm_demand2 sm_demand2 prev_demand2 
+       pm_demand3 sm_demand3 prev_demand3
        price;
 
   data FOR_TEMPLATE(keep=&FR_COLUMNS_FOR_TEMPLATE.);
@@ -1104,11 +1125,13 @@ run;
     sm_demand1=round(sm_demand1,1);
     sm_demand2=round(sm_demand2,1);
     sm_demand3=round(sm_demand3,1);
-    s3=round(s3,1);
-    s2=round(s2,1);
-    s1=round(s1,1);
-    ytd=round(ytd,1);
-    extrapolation=round(extrapolation,1);
+    s3_delivered=round(s3_delivered,1);
+    s2_delivered=round(s2_delivered,1);
+    s1_delivered=round(s1_delivered,1);
+    ytd_delivered=round(ytd_delivered,1);
+	ytd_required=round(ytd_required,1);
+    extrapolation_delivered=round(extrapolation_delivered,1);
+    extrapolation_required=round(extrapolation_required,1);
   run;
 
   proc sort data=FOR_TEMPLATE;
@@ -1159,15 +1182,7 @@ run;
     set for_template(drop=global_plc	
                           Global_Future_PLC	
                           global_valid_from_date 
-                          supply 
-                          capacity
-                          remark 
-                          perc_growth1	
-                          tactical_plan1
-						  perc_growth2	
-                          tactical_plan2 
-                          perc_growth3	
-                          tactical_plan3);
+                          );
   run;
 
   proc export 
@@ -1226,8 +1241,8 @@ run;
                       dmpm_demand_&nextseason2.=pmf_demand2
                       dmpm_demand_&nextseason3.=pmf_demand3
                       assumptions_&nextseason1.=pmf_assm1
-                      assumptions_&nextseason2.=pmf_assm2
-                      assumptions_&nextseason3.=pmf_assm3
+/*                      assumptions_&nextseason2.=pmf_assm2*/
+/*                      assumptions_&nextseason3.=pmf_assm3*/
                      ));
     if missing(pmf_demand1) then pmf_demand1=0;
     if missing(pmf_demand2) then pmf_demand2=0;
@@ -1267,8 +1282,8 @@ run;
           b.pmf_demand2,
           b.pmf_demand3,
           b.pmf_assm1,
-          b.pmf_assm2,
-          b.pmf_assm3,
+/*          b.pmf_assm2,*/
+/*          b.pmf_assm3,*/
           round((b.pmf_demand1*a.country_split),1) as pmf_split_demand1, 
           round((b.pmf_demand2*a.country_split),1) as pmf_split_demand2, 
           round((b.pmf_demand3*a.country_split),1) as pmf_split_demand3 
@@ -1325,20 +1340,21 @@ run;
     set pmf_end;
   run;
 
+
   %let PMF_COLUMNS_FOR_TEMPLATE=order seasons Country Product_Line 
-        crop_categories genetics species_code
-        Species Series variety Variety_name 
-        plc Future_PLC valid_from_date 
-        replace_by replacement_date
-        global_plc Global_Future_PLC global_valid_from_date 
-        s3 s2 s1 
-        ytd percentage extrapolation 
-        country_split /*pmf_supply pmf_capacity remark*/ 
-        prev_demand0 assumption0
-        perc_growth1 tactical_plan1 pmf_split_demand1 pmf_sm_demand1 prev_demand1 pmf_assm1
-        perc_growth2 tactical_plan2 pmf_split_demand2 pmf_sm_demand2 prev_demand2 pmf_assm2 
-        perc_growth3 tactical_plan3 pmf_split_demand3 pmf_sm_demand3 prev_demand3 pmf_assm3 
-        price;
+       crop_categories genetics species_code
+       Species Series variety Variety_name 
+       plc Future_PLC valid_from_date 
+       replace_by replacement_date
+       global_plc Global_Future_PLC global_valid_from_date 
+       s3_delivered s2_delivered s1_delivered required_sales_s1 ytd_delivered_s0 ytd_required_s0 
+       percentage extrapolation_delivered_s0 extrapolation_required_s0 
+       country_split  
+       running_demand_s0 assumption0
+       pm_demand1 sm_demand1 prev_demand1 assumption1 
+       pm_demand2 sm_demand2 prev_demand2 
+       pm_demand3 sm_demand3 prev_demand3
+       price;
 
   data FOR_TEMPLATE_COUNTRIES(keep=&PMF_COLUMNS_FOR_TEMPLATE. drop=global_plc	
                           Global_Future_PLC	
@@ -1366,12 +1382,14 @@ run;
     pmf_sm_demand1=round(pmf_sm_demand1,1);
     pmf_sm_demand2=round(pmf_sm_demand2,1);
     pmf_sm_demand3=round(pmf_sm_demand3,1);
-    s3=round(s3,1);
-    s2=round(s2,1);
-    s1=round(s1,1);
-    ytd=round(ytd,1);
-    extrapolation=round(extrapolation,1);
-  run;
+    s3_delivered=round(s3_delivered,1);
+    s2_delivered=round(s2_delivered,1);
+    s1_delivered=round(s1_delivered,1);
+    ytd_delivered=round(ytd_delivered,1);
+	ytd_required=round(ytd_required,1);
+    extrapolation_delivered=round(extrapolation_delivered,1);
+    extrapolation_required=round(extrapolation_required,1);
+run;
 
   proc sort data=FOR_TEMPLATE_COUNTRIES;
     by product_line species series variety order country;
@@ -1473,7 +1491,7 @@ run;
     create table smf2 as
     select a.*, b.smf_demand1 as smf_demand1_raw, b.smf_demand2 as smf_demand2_raw, b.smf_demand3 as smf_demand3_raw, 
                 b.smf_demand1, b.smf_demand2, b.smf_demand3, 
-                b.smf_total_demand1, b.smf_total_demand2, b.smf_total_demand3, c.smf_assm1, c.smf_assm2, c.smf_assm3 from smf1 a
+                b.smf_total_demand1, b.smf_total_demand2, b.smf_total_demand3, c.smf_assm1 /*, c.smf_assm2, c.smf_assm3*/ from smf1 a
     left join forecast_sm_feedback_demand2 b on a.variety=b.variety and a.country=b.country
     left join forecast_sm_feedback_assm c on a.variety=c.variety and a.country=c.country;
   quit;
@@ -1482,8 +1500,8 @@ run;
     set smf2;
     if country="&region." then do;
       smf_assm1=pmf_assm1;
-      smf_assm2=pmf_assm2;
-      smf_assm3=pmf_assm3;
+/*      smf_assm2=pmf_assm2;*/
+/*      smf_assm3=pmf_assm3;*/
     end;
     smf_total_demand_raw1=smf_total_demand1;
     smf_total_demand_raw2=smf_total_demand2;
@@ -1523,20 +1541,22 @@ run;
     set smf_end;
   run;
 
-  %let SMF_COLUMNS_FOR_TEMPLATE=order seasons Country Product_Line 
-     crop_categories genetics species_code
-     Species Series variety Variety_name 
-     plc Future_PLC valid_from_date 
-     replace_by replacement_date
-     global_plc Global_Future_PLC global_valid_from_date  
-     s3 s2 s1  
-     ytd percentage extrapolation  
-     country_split /*pmf_supply pmf_capacity remark*/  
-     prev_demand0 assumption0
-     perc_growth1 tactical_plan1 pmf_split_demand1 smf_demand1 prev_demand1 smf_assm1
-     perc_growth2 tactical_plan2 pmf_split_demand2 smf_demand2 prev_demand2 smf_assm2 
-     perc_growth3 tactical_plan3 pmf_split_demand3 smf_demand3 prev_demand3 smf_assm3 
-     price;
+
+
+	  %let SMF_COLUMNS_FOR_TEMPLATE=order seasons Country Product_Line 
+       crop_categories genetics species_code
+       Species Series variety Variety_name 
+       plc Future_PLC valid_from_date 
+       replace_by replacement_date
+       global_plc Global_Future_PLC global_valid_from_date 
+       s3_delivered s2_delivered s1_delivered required_sales_s1 ytd_delivered_s0 ytd_required_s0 
+       percentage extrapolation_delivered_s0 extrapolation_required_s0 
+       country_split  
+       running_demand_s0 assumption0
+       pm_demand1 sm_demand1 prev_demand1 assumption1 
+       pm_demand2 sm_demand2 prev_demand2 
+       pm_demand3 sm_demand3 prev_demand3
+       price;
 
   data SMF_FOR_TEMPLATE(keep=&SMF_COLUMNS_FOR_TEMPLATE.);
     retain &SMF_COLUMNS_FOR_TEMPLATE.;
@@ -1553,11 +1573,13 @@ run;
     smf_demand1=round(smf_demand1,1);
     smf_demand2=round(smf_demand2,1);
     smf_demand3=round(smf_demand3,1);
-    s3=round(s3,1);
-    s2=round(s2,1);
-    s1=round(s1,1);    
-    ytd=round(ytd,1);
-    extrapolation=round(extrapolation,1);
+    s3_delivered=round(s3_delivered,1);
+    s2_delivered=round(s2_delivered,1);
+    s1_delivered=round(s1_delivered,1);
+    ytd_delivered=round(ytd_delivered,1);
+	ytd_required=round(ytd_required,1);
+    extrapolation_delivered=round(extrapolation_delivered,1);
+    extrapolation_required=round(extrapolation_required,1);
   run;
 
   proc sort data=SMF_FOR_TEMPLATE;
@@ -1606,8 +1628,8 @@ run;
                               sm_demand_&nextseason2.=so_demand2
                               sm_demand_&nextseason3.=so_demand3
                               assumptions_&nextseason1.=so_assm1
-                              assumptions_&nextseason2.=so_assm2
-                              assumptions_&nextseason3.=so_assm3));
+                              /*assumptions_&nextseason2.=so_assm2
+                              assumptions_&nextseason3.=so_assm3*/));
     if missing(so_demand1) then so_demand1=0;
     if missing(so_demand2) then so_demand2=0;
     if missing(so_demand3) then so_demand3=0;
@@ -1619,7 +1641,7 @@ run;
 
   proc sql;
     create table so2 as
-    select a.*, b.so_demand1, b.so_demand2, b.so_demand3, b.so_assm1, b.so_assm2, b.so_assm3 
+    select a.*, b.so_demand1, b.so_demand2, b.so_demand3, b.so_assm1 /*, b.so_assm2, b.so_assm3 */
     from so1 a
     left join signoff_file0 b on a.variety=b.variety and a.country=b.country;
   quit;
@@ -1659,20 +1681,22 @@ run;
     set so_end;
   run;
 
-  %let SO_COLUMNS_FOR_TEMPLATE=order seasons Country Product_Line 
+
+
+ %let SO_COLUMNS_FOR_TEMPLATE=order seasons Country Product_Line 
        crop_categories genetics species_code
-     Species Series variety Variety_name 
-     plc Future_PLC valid_from_date 
-     replace_by replacement_date
-     global_plc Global_Future_PLC global_valid_from_date  
-     s3 s2 s1  
-     ytd percentage extrapolation  
-     country_split /*pmf_supply pmf_capacity remark*/  
-     prev_demand0 assumption0
-     perc_growth1 tactical_plan1 pmf_split_demand1 smf_demand1 prev_demand1 smf_assm1
-     perc_growth2 tactical_plan2 pmf_split_demand2 smf_demand2 prev_demand2 smf_assm2 
-     perc_growth3 tactical_plan3 pmf_split_demand3 smf_demand3 prev_demand3 smf_assm3 
-     price;
+       Species Series variety Variety_name 
+       plc Future_PLC valid_from_date 
+       replace_by replacement_date
+       global_plc Global_Future_PLC global_valid_from_date 
+       s3_delivered s2_delivered s1_delivered required_sales_s1 ytd_delivered_s0 ytd_required_s0 
+       percentage extrapolation_delivered_s0 extrapolation_required_s0 
+       country_split  
+       running_demand_s0 assumption0
+       pm_demand1 sm_demand1 prev_demand1 assumption1 
+       pm_demand2 sm_demand2 prev_demand2 
+       pm_demand3 sm_demand3 prev_demand3
+       price;
 
   data SO_FOR_TEMPLATE(keep=&SO_COLUMNS_FOR_TEMPLATE.);
     retain &SO_COLUMNS_FOR_TEMPLATE.;
@@ -1689,11 +1713,13 @@ run;
     so_demand1=round(so_demand1,1);
     so_demand2=round(so_demand2,1);
     so_demand3=round(so_demand3,1);
-    s3=round(s3,1);
-    s2=round(s2,1);
-    s1=round(s1,1);    
-    ytd=round(ytd,1);
-    extrapolation=round(extrapolation,1);
+	s3_delivered=round(s3_delivered,1);
+    s2_delivered=round(s2_delivered,1);
+    s1_delivered=round(s1_delivered,1);
+    ytd_delivered=round(ytd_delivered,1);
+	ytd_required=round(ytd_required,1);
+    extrapolation_delivered=round(extrapolation_delivered,1);
+    extrapolation_required=round(extrapolation_required,1);
   run;
 
   proc sql noprint;

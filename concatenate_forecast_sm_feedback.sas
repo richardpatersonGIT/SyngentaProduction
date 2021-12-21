@@ -240,11 +240,11 @@
         smf_demand3=coalesce(smf_demand3, 0);
     run;
 
-    data feedback_tmp_assm (keep=variety country smf_assm1 smf_assm2 smf_assm3);
+    data feedback_tmp_assm (keep=variety country smf_assm1 /*smf_assm2 smf_assm3*/);
       set forecast_file(rename=(
                       assumptions_&nextseason1.=smf_assm1
-                      assumptions_&nextseason2.=smf_assm2
-                      assumptions_&nextseason3.=smf_assm3));
+                      /*assumptions_&nextseason2.=smf_assm2
+                      assumptions_&nextseason3.=smf_assm3*/));
     run;
 
     %if "&i."="1" %then %do;
