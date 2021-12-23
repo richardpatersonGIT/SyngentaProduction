@@ -1062,17 +1062,24 @@ run;
       run;
   %end;
 
-  data fr_end(drop=series_name_in_region abc);
+  data fr_end(drop=series_name_in_region abc) no_demand(keep=variety order s1 s2 s3);
     set fr11;
 	/* RMP (1 JUNE 2021) - feature request - use regional series name when available, see also change in xls_pmd_global.sas */
 	series=coalescec(series_name_in_region, series);
     /* RMP (1 JUNE 2021) - feature request - use ABC class from PMD not tactical plan */
 	crop_categories = abc;
-	if plc='G2' and Sum(s1,s2,s3,ytd) <=0 then delete;
+	output fr_end;
+	if plc='G2' and order=3 and Sum(s1,s2,s3,ytd) <=0 then output no_demand;
   run;
 
+  /* remove varieties with no demand on global level */
+ proc sql;
+  create table fr_end as
+    select * from fr_end 
+    where variety not in (select variety from no_demand)
+    ;
+ quit;
 
-  
 
   /* RichardPaterson - 21DEC2021 change name of columns for new format */
   /* 'required' term now replaces actual_sales */
