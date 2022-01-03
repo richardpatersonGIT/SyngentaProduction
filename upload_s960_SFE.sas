@@ -36,13 +36,13 @@
     varnum=10; /*Excel column J*/
     columnname="Variety";
     output;
-    varnum=27; /*Excel column AA*/
+    varnum=27; /*Excel column AD*/
     columnname="Netproposal0";
     output;
-    varnum=31; /*Excel column AE*/
+    varnum=34; /*Excel column AH*/
     columnname="Netproposal1";
     output;
-    varnum=35; /*Excel column AI*/
+    varnum=37; /*Excel column AK*/
     columnname="Netproposal2";
     output;
   run;
@@ -85,18 +85,75 @@
   quit;
 
   proc sql;
-  create table forecast_report0 as
-    select * from forecast_report 
-    where variety in (select variety from dmproc.material_assortment where bulk_6a=1 and material_plc_current^='G2' and material_division='6A' and region="&region.")
-    and variety not in (select variety from varieties_not_in_pmd);
+    create table varieties_not_in_mat_assortment as
+    select distinct variety from forecast_report where variety not in (select variety from dmproc.material_assortment where region="&region.");
+  quit;
+
+
+  proc sql;
+    create table material_assortment1 as 
+   select distinct variety, 1 as material_pass_1
+    from dmproc.material_assortment 
+	where material_plc_current^='G2' and material_division='6A' and region="&region";
   quit;
 
   proc sql;
+    create table material_assortment2 as 
+   select distinct variety, 1 as material_pass_2
+    from dmproc.material_assortment 
+	where material_plc_current^='G2' and material_division='6A' and region="BI";
+  quit;
+
+ 
+   proc sql;
+  create table forecast_report0 as
+    select a.*, b.material_pass_1 from forecast_report a left join 
+    material_assortment1 b on a.variety = b.variety;
+quit;
+
+
+ proc sql;
+  create table forecast_report0_1 as
+    select a.*, b.material_pass_2 from forecast_report0 a left join 
+    material_assortment2 b on a.variety = b.variety;
+quit;
+  
+/*  proc sql;*/
+/*  create table forecast_report0 as*/
+/*    select * from forecast_report */
+/*    where variety in (select variety from dmproc.material_assortment where bulk_6a=1 and material_plc_current^='G2' and material_division='6A' and region="&region.")*/
+/*    and variety not in (select variety from varieties_not_in_pmd);*/
+/*  quit;*/
+
+
+ /* Richard: where a match is not found in the material_assortment file for SFE we need to use the SAP download file for BI */
+  /* Type=1 : match cannot be found substitute with BI*/
+
+  proc sql;
     create table forecast_report1 as
-    select a.variety, a.country as region, a.total_demand, a.Netproposal0, a.Netproposal1, a.Netproposal2, b.material, b.material_division as mat_div, &historical_season. as order_season, b.process_stage as process_stage  
-    from forecast_report0 a
+    select a.variety, a.country as region, a.total_demand, a.Netproposal0, a.Netproposal1, a.Netproposal2, a.material_pass_1, a.material_pass_2,
+           b.material, b.material_division as mat_div, &historical_season. as order_season, b.process_stage as process_stage  
+    from forecast_report0_1(where=(material_pass_1=1)) a
     left join dmproc.material_assortment b on a.country=b.region and a.variety=b.variety and b.bulk_6a=1 and b.material_plc_current^='G2' and b.material_division='6A';
   quit;
+
+   /* Richard: where a match is not found in the material_assortment file for SFE we need to use the SAP download file for BI */
+  /* Type=2 : match cannot be found substitute with BI*/
+  proc sql;
+    create table forecast_report1_b as
+    select a.variety, a.country as region, a.total_demand, a.Netproposal0, a.Netproposal1, a.Netproposal2, a.material_pass_1, a.material_pass_2,
+           b.material, b.material_division as mat_div, &historical_season. as order_season, b.process_stage as process_stage  
+    from forecast_report0_1(where=(missing(material_pass_1) and ^missing(material_pass_2))) a
+    left join dmproc.material_assortment(where=(region='BI')) b on a.variety=b.variety and b.material_plc_current^='G2' and b.material_division='6A';
+  quit;
+
+  data forecast_report1;
+    set forecast_report1(in=a) forecast_report1_b(in=b);
+	if a then type=1;
+	else if b then type=2;
+  run;
+
+
 
   %filter_orders(in_table=dmproc.orders_all, out_table=orders_filtered);
 /*Call order report*/
@@ -115,6 +172,10 @@
   run;
 
 /*Filter orders1 with forecast materials*/
+
+   /* Richard: where a match is not found in the material_assortment file for SFE we need to use the SAP download file for BI */
+  /* Type=1 : match cannot be found substitute with BI*/
+
   proc sql;
     create table orders2 as
     select   f.region, f.variety, f.process_stage, 
@@ -123,10 +184,33 @@
             coalesce(o.order_year, &historical_season.) as order_year, 
             coalesce(o.order_month_season, &historical_season.) as order_month_season, 
             coalesce(o.order_month, 12) as order_month
-    from forecast_report1 f
+    from forecast_report1(where=(type=1)) f
     left join orders1 o on o.region=f.region and o.variety=f.variety and f.process_stage=o.process_stage
     left join dmproc.material_assortment c on f.region=c.region and f.variety=c.variety and f.process_stage=c.process_stage and c.bulk_6a=1;
   quit;
+
+   /* Richard: where a match is not found in the material_assortment file for SFE we need to use the SAP download file for BI */
+  /* Type=2 : match cannot be found substitute with BI*/
+
+  proc sql;
+    create table orders2_1 as
+    select   f.region, f.variety, f.process_stage, 
+             c.material, c.material_division as mat_div, c.sub_unit, 
+            coalesce(o.actual_sales, 0) as actual_sales, 
+            coalesce(o.order_year, &historical_season.) as order_year, 
+            coalesce(o.order_month_season, &historical_season.) as order_month_season, 
+            coalesce(o.order_month, 12) as order_month
+    from forecast_report1(where=(type=2)) f
+    left join orders1 o on o.region=f.region and o.variety=f.variety and f.process_stage=o.process_stage
+    left join dmproc.material_assortment(where=(region='BI')) c on f.variety=c.variety and f.process_stage=c.process_stage;
+  quit;
+
+   data orders2;
+    set orders2(in=a) orders2_1(in=b);
+	if a then type=1;
+	else if b then type=2;
+  run;
+
 
 /*Filter-out missing sub_unit and missing order_year*/
   proc sql;
@@ -222,15 +306,15 @@
 /*Calculate sum_ps from order data*/
   proc sql;
     create table orders_aggr_ps as
-    select region, order_month_season, variety, process_stage, sum(actual_sales) as sum_ps 
+    select region, order_month_season, variety, process_stage, type, sum(actual_sales) as sum_ps 
     from orders3 
-    group by region, order_month_season, variety, process_stage;
+    group by region, order_month_season, variety, process_stage, type;
   quit;
 
 /*Calculate ps_percentage*/
   proc sql;
     create table orders_per_ps as
-    select w.region, w.order_month_season, w.variety, w.process_stage, w.sum_ps, s.sum_variety, 
+    select w.region, w.order_month_season, w.variety, w.process_stage, w.sum_ps, s.sum_variety, w.type,
           w.sum_ps/s.sum_variety as ps_percentage, . as adjusted_percentage  
     from orders_aggr_ps w
     left join orders_aggr_season s on w.region=s.region and w.variety=s.variety and w.order_month_season=s.order_month_season
@@ -241,11 +325,25 @@
   proc sql;
     create table orders_per_ps1 as
     select a.*, b.species, b.series, b.variety_name, c.fps_material_name as material_name, c.material, b.current_plc as variety_plc, c.material_plc_current as material_plc
-    from orders_per_ps a
+    from orders_per_ps(where=(type=1)) a
     left join dmproc.PMD_Assortment b on a.region=b.region and a.variety=b.variety
     left join dmproc.material_assortment c on a.region=c.region and a.variety=c.variety and a.process_stage=c.process_stage and c.bulk_6a=1 and c.material_plc_current^='G2' and material_division='6A'
     order by a.variety, c.material;
   quit;
+
+  proc sql;
+    create table orders_per_ps1_1 as
+    select a.*, b.species, b.series, b.variety_name, c.fps_material_name as material_name, c.material, b.current_plc as variety_plc, c.material_plc_current as material_plc
+    from orders_per_ps(where=(type=2)) a
+    left join dmproc.PMD_Assortment b on a.region=b.region and a.variety=b.variety
+    left join dmproc.material_assortment(where=(region='BI')) c on a.variety=c.variety and a.process_stage=c.process_stage and c.material_plc_current^='G2' and material_division='6A'
+    order by a.variety, c.material;
+  quit;
+
+data orders_per_ps1;
+  set orders_per_ps1 orders_per_ps1_1;
+run; 
+
 
  /*Calculate total orders per month*/
   proc sql;
@@ -289,15 +387,36 @@
   proc sql;
     create table all_months_combination as
     select * from all_months a
-    join (select distinct region, variety, process_stage from forecast_report1) on 1=1
+    join (select distinct region, variety, process_stage, type from forecast_report1) on 1=1
     order by region, variety, process_stage, order_year, order_month;
   quit;
 
+  /* Richard: where a match is not found in the material_assortment file for SFE we need to use the SAP download file for BI */
+  /* Type=1 : match can be found */
+
   proc sql;
     create table all_months_combination1 as
-    select a.*, c.material from all_months_combination a
+    select a.*, c.material from all_months_combination(where=(type=1)) a
     left join dmproc.material_assortment c on a.region=c.region and a.variety=c.variety and a.process_stage=c.process_stage and c.bulk_6a=1 and c.material_plc_current^='G2' and material_division='6A';
   quit;
+
+  /* Richard: where a match is not found in the material_assortment file for SFE we need to use the SAP download file for BI */
+  /* Type=2 : match cannot be found substitute with BI*/
+
+  
+  proc sql;
+    create table all_months_combination1_b as
+    select a.*, c.material from all_months_combination(where=(type=2)) a
+    left join dmproc.material_assortment(where=(region='BI')) c on a.variety=c.variety and a.process_stage=c.process_stage and c.material_plc_current^='G2' and material_division='6A';
+  quit;
+
+  
+   data all_months_combination1;
+    set all_months_combination1(in=a) all_months_combination1_b(in=b);
+	if a then type=1;
+	else if b then type=2;
+  run;
+
 
 %mend s960_SFE_upload_preparation;
 
@@ -628,7 +747,7 @@
 
   proc sql;
     create table final_distribution1 as
-    select a.region, a.variety, a.material, a.order_year, a.order_month, coalesce(b.total_percentage,0) as total_percentage
+    select a.region, a.variety, a.material, a.order_year, a.order_month, a.type, coalesce(b.total_percentage,0) as total_percentage
     from all_months_combination1 a
     left join final_distribution b on a.region=b.region and a.variety=b.variety and a.material=b.material and a.order_year=b.order_year and a.order_month=b.order_month;
   quit;
@@ -636,14 +755,28 @@
   proc sql;
     create table final_distribution2 as
     select a.*, b.final_mat_percentage, b.mat_proposal0, b.mat_proposal1, b.mat_proposal2, c.fps_material_name as material_basic_description_en, c.sub_unit, c.process_stage as process_stage
-    from final_distribution1 a
+    from final_distribution1(where=(type=1)) a
     left join mat_net_amounts b on a.region=b.region and a.variety=b.variety and a.material=b.material
     left join dmproc.material_assortment c on a.region=c.region and a.variety=c.variety and a.material=c.material;
   quit;
 
+
+  proc sql;
+    create table final_distribution2_1 as
+    select a.*, b.final_mat_percentage, b.mat_proposal0, b.mat_proposal1, b.mat_proposal2, c.bi_material_name as material_basic_description_en, c.sub_unit, c.process_stage as process_stage
+    from final_distribution1(where=(type=2)) a
+    left join mat_net_amounts b on a.region=b.region and a.variety=b.variety and a.material=b.material
+    left join dmproc.material_assortment(where=(region="BI")) c on a.variety=c.variety and a.material=c.material;
+  quit;
+
+  data final_distribution2;
+    set final_distribution2 final_distribution2_1;
+  run;
+
+
   proc sql;
     create table final_distribution3 as
-    select region, variety, process_stage, order_year, order_month, sum(mat_proposal0*total_percentage) as ps0 , sum(mat_proposal1*total_percentage) as ps1, sum(mat_proposal2*total_percentage) as ps2
+    select region, variety, process_stage, order_year, order_month, sum(mat_proposal0*total_percentage) as ps0 , type, sum(mat_proposal1*total_percentage) as ps1, sum(mat_proposal2*total_percentage) as ps2
     from final_distribution2 
     group by region, variety, process_stage, order_year, order_month;
   quit;
@@ -664,9 +797,21 @@
   proc sql;
     create table final_distribution5 as
     select a.*, b.material, b.fps_material_name as material_description 
-    from final_distribution4 a
+    from final_distribution4(where=(type=1)) a
     left join dmproc.material_assortment b on a.region=b.region and a.variety=b.variety and a.process_stage=b.process_stage and b.bulk_6a=1 and b.material_plc_current^='G2' and b.material_division='6A';
   quit;
+
+ proc sql;
+    create table final_distribution5_1 as
+    select a.*, b.material, b.fps_material_name as material_description 
+    from final_distribution4(where=(type=2)) a
+    left join dmproc.material_assortment(where=(region='BI')) b on a.variety=b.variety and a.process_stage=b.process_stage and b.material_plc_current^='G2' and b.material_division='6A';
+  quit;
+
+ data final_distribution5;
+  set final_distribution5 final_distribution5_1;
+ run;
+ 
 
   proc sql;
     create table final_distribution6 as

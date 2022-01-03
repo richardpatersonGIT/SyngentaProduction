@@ -37,13 +37,13 @@
     varnum=10; /*Excel column J*/
     columnname="Variety";
     output;
-    varnum=27; /*Excel column AA*/
+	varnum=27; /*Excel column AD*/
     columnname="Netproposal0";
     output;
-    varnum=31; /*Excel column AE*/
+    varnum=34; /*Excel column AH*/
     columnname="Netproposal1";
     output;
-    varnum=35; /*Excel column AI*/
+    varnum=37; /*Excel column AK*/
     columnname="Netproposal2";
     output;
   run;
