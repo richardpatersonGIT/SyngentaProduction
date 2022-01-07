@@ -1362,9 +1362,9 @@ run;
        percentage extrapolation_delivered_s0 extrapolation_required_s0 
        country_split  
        running_demand_s0 assumption0
-       pm_demand1 sm_demand1 prev_demand1 assumption1 
-       pm_demand2 sm_demand2 prev_demand2 
-       pm_demand3 sm_demand3 prev_demand3
+       pmf_split_demand1 pmf_sm_demand1 prev_demand1 assumption1 
+       pmf_split_demand2 pmf_sm_demand2 prev_demand2 
+       pmf_split_demand3 pmf_sm_demand3 prev_demand3
        price;
 
   data FOR_TEMPLATE_COUNTRIES(keep=&PMF_COLUMNS_FOR_TEMPLATE. drop=global_plc	
