@@ -6,7 +6,6 @@
 
 OPTION VALIDVARNAME=V7;
 
-/* test */
 /*debug options - uncomment only 1*/
 options mprint mlogic symbolgen compress=yes reuse=yes;
 /*options nomprint nomlogic nosymbolgen compress=yes reuse=yes;*/
