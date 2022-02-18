@@ -34,8 +34,8 @@
     output;
 	varnum=9; /*Excel column I*/
     columnname="Series";
-    varnum=10; /*Excel column J*/
 	output;
+    varnum=10; /*Excel column J*/
     columnname="Variety";
     output;
 	varnum=30; /*Excel column AD*/
