@@ -172,10 +172,24 @@ quit;
       order by a.product_line, a.species, a.variety, a.material, a.product_form, a.process_stage_percentage, a.redistribution, total_process_stage_percentage,a.total_demand, b.month;
   quit;
 
-   proc sql;
-    create table forecast_report2b as 
+  proc sql;
+    create table forecast_report2a as 
       select a.*, coalesce(b.month_percentage,a.month_percentage_product) as month_percentage
       from forecast_report2(rename=(month_percentage=month_percentage_product)) a 
+      left join dmimport.BI_seasonality(where=(^missing(series))) b on upper(strip(a.product_line)) = upper(b.product_line) 
+                                                                  and a.species=b.species 
+																  and a.series=b.series
+																 
+																  and a.month = b.month
+	  where ^missing(a.month)
+      order by a.product_line, a.species, a.series, a.variety, a.material, a.product_form, a.process_stage_percentage, a.redistribution, 
+               total_process_stage_percentage,a.total_demand, a.month;
+  quit;
+
+   proc sql;
+    create table forecast_report2b as 
+      select a.*, coalesce(b.month_percentage,a.month_percentage_series) as month_percentage
+      from forecast_report2(rename=(month_percentage=month_percentage_series)) a 
       left join dmimport.BI_seasonality(where=(^missing(series))) b on upper(strip(a.product_line)) = upper(b.product_line) 
                                                                   and a.species=b.species 
 																  and a.series=b.series
