@@ -189,7 +189,7 @@ quit;
    proc sql;
     create table forecast_report2b as 
       select a.*, coalesce(b.month_percentage,a.month_percentage_series) as month_percentage
-      from forecast_report2(rename=(month_percentage=month_percentage_series)) a 
+      from forecast_report2a(rename=(month_percentage=month_percentage_series)) a 
       left join dmimport.BI_seasonality(where=(^missing(series))) b on upper(strip(a.product_line)) = upper(b.product_line) 
                                                                   and a.species=b.species 
 																  and a.series=b.series
