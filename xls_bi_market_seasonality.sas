@@ -31,9 +31,12 @@
               SHEET="BI Market process stage split";
   RUN;
 
-  data dmimport.BI_seasonality (keep=product_line species month month_percentage);
-    set BI_seasonality_raw;
+  data dmimport.BI_seasonality (keep=product_line species series variety month month_percentage);
+    retain product_line species series variety;
+    set BI_seasonality_raw(rename=(variety=variety_));
     length month month_percentage 8.;
+	
+	variety=input(variety_,8.);
     month=1;
     month_percentage=coalesce(january, 0);
     output;
@@ -84,8 +87,10 @@
   run;
 
   data dmimport.BI_process_stage_split(keep=product_line species series variety process_stage process_stage_percentage);
-    set BI_process_stage_split_raw;
+    retain product_line species series variety process_stage process_stage_percentage;
+    set BI_process_stage_split_raw(rename=(variety=variety_));
     length process_stage $3. process_stage_percentage 8.;
+	variety=input(variety_,8.);
     process_stage='CGS';
     process_stage_percentage=coalesce(CGS, 0);
     output;
@@ -104,10 +109,6 @@
 
     process_stage='PEL';
     process_stage_percentage=coalesce(PEL, 0);
-    output;
-
-    process_stage='PFN';
-    process_stage_percentage=coalesce(PFN, 0);
     output;
 
     process_stage='PGS';
