@@ -94,6 +94,10 @@
     retain product_line species series variety process_stage process_stage_percentage;
 	variety=input(variety_,8.);
 
+    process_stage='CFN';
+    process_stage_percentage=coalesce(CFN, 0);
+    output;
+
     process_stage='CGS';
     process_stage_percentage=coalesce(CGS, 0);
     output;
@@ -106,6 +110,11 @@
     process_stage_percentage=coalesce(MCO, 0);
     output;
 
+    process_stage='MPF';
+    process_stage_percentage=coalesce(MPF, 0);
+    output;
+
+ 
     process_stage='MPL';
     process_stage_percentage=coalesce(MPL, 0);
     output;
@@ -145,6 +154,11 @@
     process_stage='RDD';
     process_stage_percentage=coalesce(RDD, 0);
     output;
+ 
+    process_stage='RDH';
+    process_stage_percentage=coalesce(RDH, 0);
+    output;
+
     
     process_stage='RDY';
     process_stage_percentage=coalesce(RDY, 0);

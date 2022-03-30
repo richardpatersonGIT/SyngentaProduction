@@ -60,7 +60,7 @@
 
   data forecast_report (keep=variety series country total_demand Netproposal0 Netproposal1 Netproposal2);
     set forecast_report_file(rename=(&renamestring.));
-    length country $6. series $20 variety  Netproposal0 Netproposal1 Netproposal2 8.;
+    length country $6. series $44 variety  Netproposal0 Netproposal1 Netproposal2 8.;
     country=strip(_country);
     variety=input(strip(_variety), 8.);
 	series=strip(_series);
@@ -80,7 +80,7 @@
     from forecast_report a
     left join dmimport.BI_seed_assortment b on a.variety=b.variety
     left join dmimport.BI_process_stage_split(where=(missing(variety) and missing(series))) d on upper(strip(b.product_line)) = upper(d.product_line) 
-													and b.species_code=d.species 
+													and upper(b.species_code)=upper(d.species) 
 													and b.product_form=d.process_stage
     order by b.product_line, b.species_code, a.variety, b.material_bulk, b.product_form;
   quit;
