@@ -836,7 +836,7 @@ run;
             Material_Description,
             '+++' as Sal, 
             '++++++++++' as SRep,
-            'ANL02' as Sold_to_Party,
+            '++++++++++' as Sold_to_Party,
             Confirmed_Sales_Forecast,
             0 as Returns_Planned,
             0 as Market_Uncertainity,
