@@ -692,7 +692,7 @@ run;
     rc=horders.find(); 
     ytd_invoiced=coalesce(historical_sales,0);
 
-
+    call missing(historical_sales);
     order_season=&season1.;
     rc=horders.find();
     s1=coalesce(historical_sales,0);
