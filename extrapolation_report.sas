@@ -9,6 +9,7 @@
 %include "&sas_applications_folder.\cleanup_xlsx_bak_folder.sas";
 %include "&sas_applications_folder.\filter_orders.sas";
 %include "&sas_applications_folder.\extrapolation_extraction.sas";
+%include "&sas_applications_folder.\extrapolation_extraction_variety.sas";
 
 %macro read_extrapolation_metadata();
 
@@ -26,13 +27,17 @@
 
 %mend read_extrapolation_metadata;
 
-%macro extrapolation_report();
+%macro extrapolation_report(level=);
 
   %let extrapolation_start_time=EXTRAPOLATION STARTED: %sysfunc(date(),worddate.). %sysfunc(time(),timeampm.);
 
   %read_extrapolation_metadata();
 
-  %extrapolation_extraction(extrapolation_config_ds=extrapolation_report_md);
+  %if &level=productline %then 
+  		%extrapolation_extraction(extrapolation_config_ds=extrapolation_report_md);
+  %else %if &level=variety %then 
+  		%extrapolation_extraction_variety(extrapolation_config_ds=extrapolation_report_md);;
+
 
   proc sql noprint;
       select mat_div into :mat_div_name separated by '_' from extrapolation_report_md where ^missing(mat_div);
@@ -44,7 +49,7 @@
     call symput('extrapolation_report_file', strip(extrapolation_report_file));
   run;
 
-  %let extrapolation_name=&extrapolation_report_folder.\Extrapolation_&ext_report_name._&extrapolation_report_file..xlsx;
+  %let extrapolation_name=&extrapolation_report_folder.\Extrapolation_&ext_report_name._&extrapolation_report_file._&level..xlsx;
 
   x "del &extrapolation_name."; 
 
@@ -101,7 +106,14 @@
 
 %mend extrapolation_report;
 
-%extrapolation_report();
+%extrapolation_report(level=productline);
+%extrapolation_report(level=variety);
+
+
+
+
+
+
 
 
 

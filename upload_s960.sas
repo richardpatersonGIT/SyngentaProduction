@@ -20,41 +20,50 @@
   PROC IMPORT OUT=forecast_report_file 
               DATAFILE="&forecast_report_file."
               DBMS=  EXCELCS  REPLACE;
-              RANGE="Variety level fcst$A8:AX";
+              RANGE="Variety level fcst$A8:AL";
   RUN;
 
   proc contents data=forecast_report_file out=forecast_contents noprint;
   run;
+
 
   data forecast_cols;
     length varnum 8. columnname $32.;
     varnum=3; /*Excel column C*/
     columnname="Country"; 
     output;
+	varnum=9; /*Excel column I*/
+    columnname="Series";
+	output;
     varnum=10; /*Excel column J*/
     columnname="Variety";
     output;
-    varnum=35; /*Excel column AI*/
+	varnum=30; /*Excel column AD*/
     columnname="Netproposal0";
     output;
-    varnum=41; /*Excel column AO*/
+    varnum=34; /*Excel column AH*/
     columnname="Netproposal1";
     output;
-    varnum=47; /*Excel column AU*/
+    varnum=37; /*Excel column AK*/
     columnname="Netproposal2";
     output;
   run;
+
+
 
   proc sql noprint;
     select compress(name||'=_'||columnname) into :renamestring separated by ' ' from forecast_cols fcols
     left join forecast_contents frcst on fcols.varnum=frcst.varnum;
   quit;
 
-  data forecast_report (keep=variety country total_demand Netproposal0 Netproposal1 Netproposal2);
+  %put &=renamestring;
+
+  data forecast_report (keep=variety series country total_demand Netproposal0 Netproposal1 Netproposal2);
     set forecast_report_file(rename=(&renamestring.));
-    length country $6. variety Netproposal0 Netproposal1 Netproposal2 8.;
+    length country $6. series $44 variety  Netproposal0 Netproposal1 Netproposal2 8.;
     country=strip(_country);
     variety=input(strip(_variety), 8.);
+	series=strip(_series);
     Netproposal0=input(_Netproposal0, comma20.);
     Netproposal1=input(_Netproposal1, comma20.);
     Netproposal2=input(_Netproposal2, comma20.);
@@ -67,22 +76,68 @@
 
   proc sql;
     create table forecast_report1 as
-    select b.product_line, b.species_code as species, a.variety, b.material_bulk as material, b.product_form, d.process_stage_percentage, a.total_demand
+    select b.product_line, b.species_code as species, a.series, a.variety, b.material_bulk as material, b.product_form, d.process_stage_percentage, a.total_demand
     from forecast_report a
     left join dmimport.BI_seed_assortment b on a.variety=b.variety
-    left join dmimport.BI_process_stage_split d on upper(strip(b.product_line)) = upper(d.product_line) and b.species_code=d.species and b.product_form=d.process_stage
+    left join dmimport.BI_process_stage_split(where=(missing(variety) and missing(series))) d on upper(strip(b.product_line)) = upper(d.product_line) 
+													and upper(b.species_code)=upper(d.species) 
+													and b.product_form=d.process_stage
     order by b.product_line, b.species_code, a.variety, b.material_bulk, b.product_form;
   quit;
 
+  /* merge on series specific percentage split */
+ 
+  proc sql;
+    create table forecast_report1b as
+    select a.*, b.process_stage_percentage as process_stage_percentage_series
+    from forecast_report1 a
+    
+    left join dmimport.BI_process_stage_split b
+	on upper(strip(a.product_line)) = upper(b.product_line) 
+	and a.product_form=b.process_stage
+	and a.species=b.species 
+	and a.series=b.series
+	and missing(b.variety)
+
+	order by a.product_line, a.species, a.variety, a.material, a.product_form;
+  quit;
+  
+
+  /* merge on variety specific percentage split */
+
+  proc sql;
+    create table forecast_report1c as
+    select a.*, b.process_stage_percentage as process_stage_percentage_variety
+    from forecast_report1b a
+    
+    left join dmimport.BI_process_stage_split b
+	on upper(strip(a.product_line)) = upper(b.product_line) 
+	and a.product_form=b.process_stage
+	and a.species=b.species 
+	and a.series=b.series
+	and a.variety=b.variety
+	
+	order by a.product_line, a.species, a.variety, a.material, a.product_form;
+  quit;
+
+
+  proc sql;
+    create table forecast_report1d as  
+	select a.*, coalesce(a.process_stage_percentage_variety, a.process_stage_percentage_series, a.process_stage_percentage_species) as process_stage_percentage
+    from forecast_report1c(rename=(process_stage_percentage = process_stage_percentage_species)) a;
+quit;
+
+
+  
   proc sql;
     create table varieties_without_bulk_material as
-    select distinct * from forecast_report1 a
+    select distinct * from forecast_report1d a
     where missing(material);
   quit;
 
   proc sql;
     create table variety_ps_sum as
-      select variety, sum(process_stage_percentage) as ps_sum from forecast_report1 group by variety;
+      select variety, sum(process_stage_percentage) as ps_sum from forecast_report1d group by variety;
   quit;
 
   proc sql;
@@ -92,33 +147,67 @@
 
   proc sql;
     create table variety_ps_count as
-    select variety, count(*) as variety_ps_cnt from forecast_report1 group by variety;
+    select variety, count(*) as variety_ps_cnt from forecast_report1d group by variety;
   quit;
 
   proc sql;
     create table variety_redistribution as
-      select a.*, coalesce(b.ps_to_distribute/c.variety_ps_cnt,0) as redistribution from forecast_report1 a 
+      select a.*, coalesce(b.ps_to_distribute/c.variety_ps_cnt,0) as redistribution from forecast_report1d a 
       left join variety_ps_to_distribute b on a.variety=b.variety
       left join variety_ps_count c on a.variety=c.variety;
   quit;
 
-  proc sql;
+
+   /* merge on split percantages on product line, species level */
+   proc sql;
     create table forecast_report2 as 
-      select a.product_line, a.species, a.variety, a.product_form, a.total_demand, a.material, a.process_stage_percentage, a.redistribution, 
+      select a.product_line, a.species, a.series, a.variety, a.product_form, a.total_demand, a.material, a.process_stage_percentage, a.redistribution, 
               a.process_stage_percentage+a.redistribution as total_process_stage_percentage, b.month, b.month_percentage 
       from variety_redistribution a 
-      left join dmimport.BI_seasonality b on upper(strip(a.product_line)) = upper(b.product_line) and a.species=b.species
-      where ^missing(b.month)
+      left join dmimport.BI_seasonality(where=(missing(series))) b on upper(strip(a.product_line)) = upper(b.product_line) 
+                                                                  and a.species=b.species
+																  
+
+      
       order by a.product_line, a.species, a.variety, a.material, a.product_form, a.process_stage_percentage, a.redistribution, total_process_stage_percentage,a.total_demand, b.month;
   quit;
 
+  proc sql;
+    create table forecast_report2a as 
+      select a.*, coalesce(b.month_percentage,a.month_percentage_product) as month_percentage
+      from forecast_report2(rename=(month_percentage=month_percentage_product)) a 
+      left join dmimport.BI_seasonality(where=(^missing(series))) b on upper(strip(a.product_line)) = upper(b.product_line) 
+                                                                  and a.species=b.species 
+																  and a.series=b.series
+																 
+																  and a.month = b.month
+	  where ^missing(a.month)
+      order by a.product_line, a.species, a.series, a.variety, a.material, a.product_form, a.process_stage_percentage, a.redistribution, 
+               total_process_stage_percentage,a.total_demand, a.month;
+  quit;
+
+   proc sql;
+    create table forecast_report2b as 
+      select a.*, coalesce(b.month_percentage,a.month_percentage_series) as month_percentage
+      from forecast_report2a(rename=(month_percentage=month_percentage_series)) a 
+      left join dmimport.BI_seasonality(where=(^missing(series))) b on upper(strip(a.product_line)) = upper(b.product_line) 
+                                                                  and a.species=b.species 
+																  and a.series=b.series
+																  and a.variety=b.variety
+																  and a.month = b.month
+	  where ^missing(a.month)
+      order by a.product_line, a.species, a.series, a.variety, a.material, a.product_form, a.process_stage_percentage, a.redistribution, 
+               total_process_stage_percentage,a.total_demand, a.month;
+  quit;
+
+
   /*2020-06-07 - temporary deduplication, need to find the cause of the duplicates*/
-  proc sort data=forecast_report2 nodupkey dupout=forecast_report2_dup;
-  	by product_line species variety material product_form process_stage_percentage redistribution total_process_stage_percentage total_demand month;
+  proc sort data=forecast_report2b nodupkey dupout=forecast_report2_dup;
+  	by product_line species series variety material product_form process_stage_percentage redistribution total_process_stage_percentage total_demand month;
   run;
 
-  proc transpose data=forecast_report2 out=forecast_report3(drop=_name_) prefix=M_;
-    by product_line species variety material product_form process_stage_percentage redistribution total_process_stage_percentage total_demand;
+  proc transpose data=forecast_report2b out=forecast_report3(drop=_name_) prefix=M_;
+    by product_line species series variety material product_form process_stage_percentage redistribution total_process_stage_percentage total_demand;
     id month;
     var month_percentage;
   run;
@@ -160,7 +249,7 @@
 
   proc sql;
   create table forecast_report4 as
-    select a.*, b.order_year as year from forecast_report2 a
+    select a.*, b.order_year as year from forecast_report2b a
     left join all_months b on a.month=b.order_month;
   quit;
 
@@ -188,7 +277,7 @@
   x "del &summary_path_file.";
 
   data summary2;
-    retain Product_line  species  variety  var_count  variety_plc  material  Product_Form  process_stage_percentage  redistribution  total_process_stage_percentage  total_demand  M_1  M_2  M_3  M_4  M_5  M_6  M_7  M_8  M_9  M_10  M_11  M_12;
+    retain Product_line  species  series variety var_count  variety_plc  material  Product_Form  process_stage_percentage  redistribution  total_process_stage_percentage  total_demand  M_1  M_2  M_3  M_4  M_5  M_6  M_7  M_8  M_9  M_10  M_11  M_12;
     set summary1;
   run;
 
@@ -231,7 +320,7 @@
 
   proc sql;
     create table final_distribution1 as
-    select a.variety, a.material, a.year, a.month, coalesce(a.total_process_stage_percentage,0)*coalesce(a.month_percentage,0) as total_percentage
+    select a.variety, a.material, a.year, a.month, a.total_process_stage_percentage, a.month_percentage, coalesce(a.total_process_stage_percentage,0)*coalesce(a.month_percentage,0) as total_percentage
     from forecast_report4 a
     left join forecast_report b on a.variety=b.variety
     order by a.variety, a.material, a.year, a.month;
@@ -239,7 +328,7 @@
 
   proc sql;
     create table final_distribution2 as
-    select a.*, b.Netproposal0*total_percentage as material_month_net0, b.Netproposal1*total_percentage as material_month_net1, b.Netproposal2*total_percentage as material_month_net2, d.bi_material_name
+    select a.*, d.region, b.Netproposal0*total_percentage as material_month_net0, b.Netproposal1*total_percentage as material_month_net1, b.Netproposal2*total_percentage as material_month_net2, d.bi_material_name
     from final_distribution1 a
     left join forecast_report b on a.variety=b.variety 
     left join dmimport.bi_seed_assortment c on a.variety=c.variety /*and ^missing(c.material_bulk)*/ and a.material=c.material_bulk

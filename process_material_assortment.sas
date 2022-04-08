@@ -22,6 +22,7 @@
           sub_unit
           region
           proc_stage
+		  packing_type
         rename=(
           Material_Desc=bi_material_name
           Division=material_division

@@ -10,6 +10,37 @@
 %include "&sas_applications_folder.\read_metadata.sas";
 %include "&sas_applications_folder.\filter_orders.sas";
 
+
+%macro s967_import_week_splits;
+
+  PROC IMPORT OUT=week_splits
+              DATAFILE="&import_folder\BI_FIXED_SPLIT\BI_YPL_Japan_Cuttings_Market seasonality proposal.xlsx"
+              DBMS=  EXCELCS  REPLACE;
+			  SHEET="BI Market seasonality";
+              
+  RUN;
+
+  proc sort data=week_splits;
+   by Product_Line species series Annual_Seeds;
+  run;
+
+
+  proc transpose data=week_splits out=week_splits_trans;
+    by Product_Line species series Annual_Seeds;
+    var wk:;
+  run;
+
+  data week_splits_final(drop=_name_ _label_ col1);
+    set week_splits_trans;
+	wk=input(scan(_name_,2,'_'),8.);
+	week_percentage=col1;
+  run;
+
+ 
+
+%mend s967_import_week_splits;
+
+
 %macro s967_upload_preparation(forecast_report_file=,
                                             region=,
                                             Mat_div=,
@@ -35,13 +66,13 @@ data forecast_cols;
     varnum=10; /*Excel column J*/
     columnname="Variety";
     output;
-    varnum=30; /*Excel column AD*/
+    varnum=27; /*Excel column AA*/
     columnname="Netproposal0";
     output;
-    varnum=34; /*Excel column AH*/
+    varnum=31; /*Excel column AE*/
     columnname="Netproposal1";
     output;
-    varnum=37; /*Excel column AK*/
+    varnum=35; /*Excel column AI*/
     columnname="Netproposal2";
     output;
   run;
@@ -471,6 +502,7 @@ data forecast_cols;
     left join forecast_report b on a.variety=b.variety
     left join dmimport.variety_class_table c on a.variety=c.variety and a.region=c.region;
   quit;
+  
 
   proc sql;
     create table final_distribution3 as
@@ -479,8 +511,26 @@ data forecast_cols;
     left join dmproc.pmd_assortment b on a.variety=b.variety and a.region=b.region;
   quit;
 
+   proc sql;
+    create table final_distribution3b as 
+    select a.*, b.species, b.series, b.species_code from final_distribution3 a
+      left join dmproc.PMD_Assortment b on a.region=b.region and a.variety=b.variety;
+  quit;
+
+  proc sql;
+     create table final_distribution3c(drop=total_percentage rename=(total_percentage2=total_percentage)) as  
+	 select a.*, coalesce(b.week_percentage, a.total_percentage) as total_percentage2
+	 from final_distribution3b a
+	 left join week_splits_final b on 
+     upcase(a.species) = upcase(b.annual_seeds) and 
+	 upcase(a.species_code) = upcase(b.species) and 
+     upcase(a.series)=upcase(b.series) and a.order_week = b.wk;
+quit;
+ 
+
+
   data final_distribution4;
-    set final_distribution3(rename=(order_year=_order_year));
+    set final_distribution3c(rename=(order_year=_order_year));
     Confirmed_Sales_Forecast=round(var_proposal0*total_percentage,1);
     order_year=_order_year+&year_offset.;
       output;
@@ -622,6 +672,7 @@ data forecast_cols;
     %end;
 
     %if "&step2."="Y" %then %do;
+	  %s967_import_week_splits;
       %s967_generate_upload(forecast_report_file=%quote(&forecast_report_file.),
                                             region=&region.,
                                             Mat_div=&Mat_div.,

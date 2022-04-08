@@ -31,14 +31,17 @@
                                   Season  
                                   Season_week_start  
                                   Note);
+
     if ^missing(coalesceC(of _character_)) or ^missing(coalesce(of _numeric_)) then output;
   run;
 
   data dmimport.orders_report_md(drop=_: rename=(season=order_season product_form=PF_for_sales_text));
-    length hash 8.;
-    set orders_report_md_raw1(rename=(season_week_start=_season_week_start));
+    length hash 8. season 8.;
+    set orders_report_md_raw1(rename=(season_week_start=_season_week_start season=_season));
     hash=1;
     season_week_start=input(_season_week_start, best.);
+	season=input(_season,best.);
+	
   run;
 
 %mend read_or_metadata;
@@ -83,6 +86,7 @@
           material
           Matdescr
           SchedLine_Cnf_deldte 
+		  Hdr_req_deldte
           Order_week
           Order_month
           Line_crdte
@@ -122,6 +126,7 @@
           Net_value_curr
           species_code
           order_week_org
+		  shp_plnt
           );
     length rc hash reject 8.;
     set orders_filtered;
@@ -287,12 +292,17 @@
     if reject=0 then output;
   run;
 
+  data price_list;
+    set dmimport.price_list;
+	if upcase(region)='EUROPE' then region='SFE';
+  run;
+
   data order_report1(drop=hash_mat_div _price rc);
     set order_report;
     length rc _price price actual_sales_value historical_sales_value 8.;
     length hash_mat_div $3.;
     if _n_=1 then do;
-      declare hash price_list(dataset: 'dmimport.price_list(rename=(price=_price))');
+      declare hash price_list(dataset: 'work.price_list(rename=(price=_price))');
           rc=price_list.DefineKey ('region', 'product_line', 'species_code');
           rc=price_list.DefineData ('_price', 'hash_mat_div');
           rc=price_list.DefineDone();
@@ -306,6 +316,8 @@
       end;
     end;
   run;
+
+
 
 /*<EXTRAPOLATION>*/
 
@@ -392,7 +404,16 @@ quit;
     hash_species=upcase(species);
     rc=extrapolation_country.find();
     rc=extrapolation_species.find();
-    if ^missing(extrapolation_rate_species) then extrapolation_sales_species=round(historical_sales/extrapolation_rate_species, 1);
+
+    
+	
+    if ^missing(extrapolation_rate_species) then do;
+	    /* bugfix 26JUL2021 : extrapolation cannot be lower than current sales total */
+	    if extrapolation_rate_species > 1 then 
+		   extrapolation_sales_species=round(historical_sales/1, 1);
+        else 
+		   extrapolation_sales_species=round(historical_sales/extrapolation_rate_species, 1);
+    end;
   run;
 
 /*</EXTRAPOLATION>*/
@@ -470,6 +491,7 @@ quit;
     Rsn_rej_cd
     Line_crdte
     SchedLine_Cnf_deldte
+	Hdr_req_deldte
     order_week
     order_month
     delivery_year
@@ -522,7 +544,8 @@ quit;
     actual_sales_value
     extrapolation_rate_species
     extrapolation_rate_country
-    extrapolation_sales_species;
+    extrapolation_sales_species
+    shp_plnt;
     set order_report_rename;
   run;
 

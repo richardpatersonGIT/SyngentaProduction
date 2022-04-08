@@ -908,22 +908,20 @@
         actual_sales=historical_sales;
       end;
     end;
-
-    /*TO BE VERSION, uncomment below, delete the part above*/
-/*    if ^missing(sub_unit) then do;*/
-/*      if rsn_rej_cd in ('23', '60', '78', '64') then do;*/
-/*        historical_sales=0;*/
-/*        actual_sales=ord_qty * sub_unit;*/
-/*      end; else do;*/
-/*        historical_sales=cnf_qty * sub_unit;*/
-/*        actual_sales=historical_sales;*/
-/*      end;*/
-/*    end;*/
-
-    If rsn_rej_cd in ('57', 'ZR') then do;
-      historical_sales=0;
-      actual_sales=0;
+    
+    if ^missing(sub_unit) then do;
+	  if region='SFE' and rsn_rej_cd in ('23','60', '64','78') then do;
+        actual_sales=ord_qty * sub_unit;
+      end; 
+	 else if region in ('BI' 'JP' 'FN') and rsn_rej_cd in ('01', '02', '23', '57', '68', '78') then do;
+        actual_sales=ord_qty * sub_unit;
+     end;
+     else do;
+        historical_sales=cnf_qty * sub_unit;
+       actual_sales=historical_sales;
+      end;
     end;
+
 
     br_actual_sales=0;
     br_historical_sales=0;
@@ -934,6 +932,22 @@
     end;
 
   run;
+  
+  /* delete records where reject_codes not belonging to region */
+  data orders_sub_unit;
+    set orders_sub_unit;
+	if region='SFE' and rsn_rej_cd in ('01', '02', '57', '68') then do;
+		historical_sales=0;
+		actual_sales=0;
+	end;
+	else if region in ('BI' 'JP' 'FN') and rsn_rej_cd in ('60','64') then do;
+		actual_sales=0;
+		historical_sales=0;
+	end;
+	
+	if ^missing(rsn_rej_cd) then historical_sales=0;
+  run;
+  
 
   data dmproc.orders_seasons(drop=rc);
     set orders_sub_unit;
@@ -951,21 +965,21 @@
     rc=pmd_assortment.find(); 
 
     
-    order_year=year(SchedLine_Cnf_deldte);
-    order_month=month(SchedLine_Cnf_deldte);
-    order_yweek=input(substr(put(SchedLine_Cnf_deldte, weekv9.), 1, 4), 4.);
-    order_week=input(substr(put(SchedLine_Cnf_deldte, weekv9.), 6, 2), 2.);
+    order_year=year(Hdr_req_deldte);
+    order_month=month(Hdr_req_deldte);
+    order_yweek=input(substr(put(Hdr_req_deldte, weekv9.), 1, 4), 4.);
+    order_week=input(substr(put(Hdr_req_deldte, weekv9.), 6, 2), 2.);
     if ^missing(season_week_start) then do;
       order_season_start=input(put(order_year, 4.)||'W'||put(season_week_start, z2.)||'01', weekv9.);
-      SchedLine_Cnf_deldte_ym=input(put(year(SchedLine_Cnf_deldte),4.)||put(month(SchedLine_Cnf_deldte),z2.), 6.);
+      Hdr_req_deldte_ym=input(put(year(Hdr_req_deldte),4.)||put(month(Hdr_req_deldte),z2.), 6.);
       order_season_start_ym=input(put(year(order_season_start),4.)||put(month(order_season_start),z2.), 6.);
-      if SchedLine_Cnf_deldte >= order_season_start then do;
+      if Hdr_req_deldte >= order_season_start then do;
         order_season=order_year; 
       end; else do;
         order_season=order_year-1;
       end;
 
-      if order_season_start_ym < SchedLine_Cnf_deldte_ym or (order_season_start_ym=SchedLine_Cnf_deldte_ym and day(order_season_start)<=15) then do;
+      if order_season_start_ym < Hdr_req_deldte_ym or (order_season_start_ym=Hdr_req_deldte_ym and day(order_season_start)<=15) then do;
         order_month_season=order_year;
       end; else do;
         order_month_season=order_year-1;

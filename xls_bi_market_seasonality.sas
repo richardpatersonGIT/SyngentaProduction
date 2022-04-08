@@ -31,9 +31,13 @@
               SHEET="BI Market process stage split";
   RUN;
 
-  data dmimport.BI_seasonality (keep=product_line species month month_percentage);
-    set BI_seasonality_raw;
-    length month month_percentage 8.;
+  data dmimport.BI_seasonality (keep=product_line species series variety month month_percentage);
+    set BI_seasonality_raw(rename=(variety=variety_));
+    length month month_percentage 8. variety 8. series $44.;
+    retain product_line species series variety;
+	
+	variety=input(variety_,8.);
+
     month=1;
     month_percentage=coalesce(january, 0);
     output;
@@ -83,9 +87,17 @@
     output;
   run;
 
-  data dmimport.BI_process_stage_split(keep=product_line species process_stage process_stage_percentage);
-    set BI_process_stage_split_raw;
-    length process_stage $3. process_stage_percentage 8.;
+  data dmimport.BI_process_stage_split(keep=product_line species series variety process_stage process_stage_percentage);
+   
+    set BI_process_stage_split_raw(rename=(variety=variety_ ));
+    length process_stage $3. process_stage_percentage 8.  variety 8. series $44.;
+    retain product_line species series variety process_stage process_stage_percentage;
+	variety=input(variety_,8.);
+
+    process_stage='CFN';
+    process_stage_percentage=coalesce(CFN, 0);
+    output;
+
     process_stage='CGS';
     process_stage_percentage=coalesce(CGS, 0);
     output;
@@ -98,12 +110,21 @@
     process_stage_percentage=coalesce(MCO, 0);
     output;
 
+    process_stage='MPF';
+    process_stage_percentage=coalesce(MPF, 0);
+    output;
+
+ 
     process_stage='MPL';
     process_stage_percentage=coalesce(MPL, 0);
     output;
 
     process_stage='PEL';
     process_stage_percentage=coalesce(PEL, 0);
+    output;
+
+	process_stage='PFN';
+    process_stage_percentage=coalesce(PFN, 0);
     output;
 
     process_stage='PGS';
@@ -133,10 +154,16 @@
     process_stage='RDD';
     process_stage_percentage=coalesce(RDD, 0);
     output;
+ 
+    process_stage='RDH';
+    process_stage_percentage=coalesce(RDH, 0);
+    output;
+
     
     process_stage='RDY';
     process_stage_percentage=coalesce(RDY, 0);
     output;
   run;
+
 
 %mend IMPORT_BI_FIXED_SPLIT;

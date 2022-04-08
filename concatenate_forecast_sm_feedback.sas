@@ -187,8 +187,9 @@
   proc sql;
     create table FF_plc as
       select country as REGION, variety, 
-             plc, future_plc, valid_from_date,
-             global_plc, global_future_plc, global_valid_from_date 
+             plc, future_plc, valid_from_date
+			 /*,
+             global_plc, global_future_plc, global_valid_from_date*/ 
       from forecast_file where order=3;
   quit;
 
@@ -239,11 +240,11 @@
         smf_demand3=coalesce(smf_demand3, 0);
     run;
 
-    data feedback_tmp_assm (keep=variety country smf_assm1 smf_assm2 smf_assm3);
+    data feedback_tmp_assm (keep=variety country smf_assm1 /*smf_assm2 smf_assm3*/);
       set forecast_file(rename=(
                       assumptions_&nextseason1.=smf_assm1
-                      assumptions_&nextseason2.=smf_assm2
-                      assumptions_&nextseason3.=smf_assm3));
+                      /*assumptions_&nextseason2.=smf_assm2
+                      assumptions_&nextseason3.=smf_assm3*/));
     run;
 
     %if "&i."="1" %then %do;
