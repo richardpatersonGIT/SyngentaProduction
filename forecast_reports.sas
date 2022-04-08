@@ -708,6 +708,7 @@ run;
     s3=coalesce(historical_sales,0);
 
 	call missing(historical_sales);
+    call missing(actual_sales);
     order_season=&season1.;
     rc=aorders.find();
     actual_sales_previous_season=coalesce(actual_sales,0);
