@@ -96,7 +96,7 @@
 	on upper(strip(a.product_line)) = upper(b.product_line) 
 	and a.product_form=b.process_stage
 	and a.species=b.species 
-	and a.series=b.series
+	and upper(a.series)=upper(b.series)
 	and missing(b.variety)
 
 	order by a.product_line, a.species, a.variety, a.material, a.product_form;
@@ -114,7 +114,7 @@
 	on upper(strip(a.product_line)) = upper(b.product_line) 
 	and a.product_form=b.process_stage
 	and a.species=b.species 
-	and a.series=b.series
+	and upper(a.series)=upper(b.series)
 	and a.variety=b.variety
 	
 	order by a.product_line, a.species, a.variety, a.material, a.product_form;
@@ -178,7 +178,7 @@ quit;
       from forecast_report2(rename=(month_percentage=month_percentage_product)) a 
       left join dmimport.BI_seasonality(where=(^missing(series))) b on upper(strip(a.product_line)) = upper(b.product_line) 
                                                                   and a.species=b.species 
-																  and a.series=b.series
+																  and upper(a.series)=upper(b.series)
 																 
 																  and a.month = b.month
 	  where ^missing(a.month)
@@ -192,7 +192,7 @@ quit;
       from forecast_report2a(rename=(month_percentage=month_percentage_series)) a 
       left join dmimport.BI_seasonality(where=(^missing(series))) b on upper(strip(a.product_line)) = upper(b.product_line) 
                                                                   and a.species=b.species 
-																  and a.series=b.series
+																  and upper(a.series)=upper(b.series)
 																  and a.variety=b.variety
 																  and a.month = b.month
 	  where ^missing(a.month)
