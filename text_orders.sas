@@ -884,7 +884,7 @@
     if region^='SFE' then do;
       rc=stl.find();/*gets territory and country from soldto_nr_lookup (if found overwrite the country_lookup)*/
     end;
-
+  if region = 'SFE' and sls_grp in ('NA3','NA4','NA5','NS1','NE4') and sls_off='NL51' then sls_off='NL54';
   run;
 
   data orders_sub_unit(drop=rc);
